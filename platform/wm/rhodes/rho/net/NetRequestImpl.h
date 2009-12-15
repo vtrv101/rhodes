@@ -67,7 +67,7 @@ public :
 
     void close();
     bool isError(){ return pszErrFunction!= null; }
-    CNetResponseImpl* sendString(const String& strBody);
+    CNetResponseImpl* sendString(const String& strBody, const String& strContentType);
     CNetResponseImpl* sendStream(common::InputStream* body);
     CNetResponseImpl* downloadFile(common::CRhoFile& oFile);
 

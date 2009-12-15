@@ -4,6 +4,7 @@
 #include "common/IRhoClassFactory.h"
 #include "common/RhoMutexLock.h"
 #include "net/INetRequest.h"
+#include "ISyncProtocol.h"
 
 #include "SyncSource.h"
 #include "SyncNotify.h"
@@ -37,10 +38,10 @@ class CSyncEngine : public net::IRhoSession
 public:
     enum ESyncState{ esNone, esSyncAllSources, esSyncSource, esStop, esExit };
 
-    static String SYNC_SOURCE_FORMAT() { return "?format=json"; }
-    static int SYNC_VERSION() { return 2; }
+    //static String SYNC_SOURCE_FORMAT() { return "?format=json"; }
+    //static int SYNC_VERSION() { return 2; }
 
-    static String SYNC_ASK_ACTION() { return "/ask"; }
+    //static String SYNC_ASK_ACTION() { return "/ask"; }
 //    static int MAX_SYNC_TRY_COUNT() { return 2; }
 
     struct CSourceID
@@ -57,6 +58,7 @@ private:
     VectorPtr<CSyncSource*> m_sources;
     db::CDBAdapter& m_dbAdapter;
     common::CAutoPtr<net::INetRequest> m_NetRequest;
+    common::CAutoPtr<ISyncProtocol> m_SyncProtocol;
     ESyncState m_syncState;
     String     m_clientID;
     common::CMutex m_mxLoadClientID;
@@ -92,8 +94,10 @@ public:
 //private:
     String getClientID()const{ return m_clientID; }
     void setSession(String strSession){m_strSession=strSession;}
-    const String& getSession(){ return m_strSession; }
     boolean isSessionExist(){ return m_strSession.length() > 0; }
+//IRhoSession
+    virtual const String& getSession(){ return m_strSession; }
+    virtual const String& getContentType(){ return getProtocol().getContentType();}
 
     //CSyncEngine(): m_dbAdapter(db::CDBAdapter()), m_NetRequest(0), m_isLoggedIn(true){}
 
@@ -108,6 +112,7 @@ public:
     db::CDBAdapter& getDB(){ return m_dbAdapter; }
     CSyncNotify& getNotify(){ return m_oSyncNotify; }
     net::INetRequest& getNet(){ return *m_NetRequest; }
+    ISyncProtocol& getProtocol(){ return *m_SyncProtocol; }
 
     CSyncSource* findSourceByName(const String& strSrcName);
 
@@ -120,6 +125,9 @@ private:
 
     void callLoginCallback(String callback, int nErrCode, String strMessage);
     boolean checkAllSourcesFromOneDomain();
+
+    void initProtocol();
+
     friend class CSyncSource;
 };
 

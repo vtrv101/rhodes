@@ -86,7 +86,7 @@ CNetRequestImpl::CNetRequestImpl(CNetRequest* pParent, const char* method, const
     }while(0);
 }
 
-CNetResponseImpl* CNetRequestImpl::sendString(const String& strBody)
+CNetResponseImpl* CNetRequestImpl::sendString(const String& strBody, const String& strContentType)
 {
     CNetResponseImpl* pNetResp = new CNetResponseImpl;
 
@@ -95,11 +95,17 @@ CNetResponseImpl* CNetRequestImpl::sendString(const String& strBody)
         if ( isError() )
             break;
 
-        CAtlStringW strHeaders = L"Content-Type: application/x-www-form-urlencoded\r\n";
-        if ( !HttpAddRequestHeaders( hRequest, strHeaders, -1, HTTP_ADDREQ_FLAG_ADD|HTTP_ADDREQ_FLAG_REPLACE ) )
+        if ( strBody.length() > 0 )
         {
-            pszErrFunction = L"HttpAddRequestHeaders";
-            break;
+            CAtlStringW strHeaders = L"Content-Type: ";
+            strHeaders += strContentType.c_str();//application/x-www-form-urlencoded
+            strHeaders += L"\r\n";
+
+            if ( !HttpAddRequestHeaders( hRequest, strHeaders, -1, HTTP_ADDREQ_FLAG_ADD|HTTP_ADDREQ_FLAG_REPLACE ) )
+            {
+                pszErrFunction = L"HttpAddRequestHeaders";
+                break;
+            }
         }
 
         if ( !HttpSendRequest( hRequest, NULL, 0, const_cast<char*>(strBody.c_str()), strBody.length() ) )
@@ -221,24 +227,27 @@ CNetResponseImpl* CNetRequestImpl::sendStream(common::InputStream* bodyStream)
             break;
         }
 
-        DWORD dwBufSize = 4096;
-        char* pBuf = (char*)malloc(dwBufSize);
-        int nReaded = 0;
+        if ( bodyStream->available() > 0 )
+        {
+            DWORD dwBufSize = 4096;
+            char* pBuf = (char*)malloc(dwBufSize);
+            int nReaded = 0;
 
-	    do
-	    {
-            nReaded = bodyStream->read(pBuf,0,dwBufSize);
-            if ( nReaded > 0 )
-            {
-		        if ( !InternetWriteFile( hRequest, pBuf, nReaded, &dwBytesWritten) )
+	        do
+	        {
+                nReaded = bodyStream->read(pBuf,0,dwBufSize);
+                if ( nReaded > 0 )
                 {
-                    pszErrFunction = L"InternetWriteFile";
-                    break;
+		            if ( !InternetWriteFile( hRequest, pBuf, nReaded, &dwBytesWritten) )
+                    {
+                        pszErrFunction = L"InternetWriteFile";
+                        break;
+                    }
                 }
-            }
-	    }while(nReaded > 0);
+	        }while(nReaded > 0);
 
-        free(pBuf);
+            free(pBuf);
+        }
 
         if ( !InternetWriteFile( hRequest, szMultipartPostfix, strlen(szMultipartPostfix), &dwBytesWritten) )
         {

@@ -8,6 +8,8 @@
 #include "net/URI.h"
 #include "statistic/RhoProfiler.h"
 #include "ruby/ext/rho/rhoruby.h"
+#include "SyncProtocol_1.h"
+#include "SyncProtocol_3.h"
 
 namespace rho {
 const _CRhoRuby& RhoRuby = _CRhoRuby();
@@ -33,9 +35,20 @@ CSyncEngine::CSyncEngine(db::CDBAdapter& db): m_dbAdapter(db), m_NetRequest(0), 
 {
     m_bStopByUser = false;
     m_nSyncPageSize = 2000;
+
+    initProtocol();
 }
 
 String CSyncEngine::SYNC_PAGE_SIZE() { return convertToStringA(m_nSyncPageSize); }
+
+void CSyncEngine::initProtocol()
+{
+    int nVersion = RHOCONF().getInt("sync_version");
+    if ( nVersion == 3 )
+        m_SyncProtocol = new CSyncProtocol_3();
+    else
+        m_SyncProtocol = new CSyncProtocol_1();
+}
 
 void CSyncEngine::doSyncAllSources()
 {
@@ -211,21 +224,13 @@ String CSyncEngine::loadClientID()
 
 boolean CSyncEngine::resetClientIDByNet(const String& strClientID)//throws Exception
 {
-    String serverUrl = RHOCONF().getPath("syncserver");
-    String strUrl = serverUrl + "clientreset";
-    String strQuery = "?client_id=" + strClientID;
-    
-    NetResponse( resp, getNet().pullData(strUrl+strQuery, this) );
+    NetResponse( resp, getNet().pullData(getProtocol().getClientResetUrl(strClientID), this) );
     return resp.isOK();
 }
 
 String CSyncEngine::requestClientIDByNet()
 {
-    String serverUrl = RHOCONF().getPath("syncserver");
-    String strUrl = serverUrl + "clientcreate";
-    String strQuery = SYNC_SOURCE_FORMAT();
-
-    NetResponse(resp,getNet().pullData(strUrl+strQuery, this));
+    NetResponse(resp,getNet().pullData(getProtocol().getClientCreateUrl(), this));
     if ( resp.isOK() && resp.getCharData() != null )
     {
         const char* szData = resp.getCharData();
@@ -279,7 +284,7 @@ void CSyncEngine::callLoginCallback(String callback, int nErrCode, String strMes
     
 	LOG(INFO) + "Login callback: " + callback + ". Body: "+ strBody;
 
-    NetResponse( resp, getNet().pushData( strUrl, strBody, this ) );
+    NetResponse( resp, getNet().pushData( strUrl, strBody, null ) );
     if ( !resp.isOK() )
         LOG(ERROR) + "Call Login callback failed. Code: " + resp.getRespCode() + "; Error body: " + resp.getCharData();
 	//}catch(Exception exc)
@@ -320,10 +325,7 @@ void CSyncEngine::login(String name, String password, String callback)
     	return;
 	}
 
-    String serverUrl = RHOCONF().getPath("syncserver");
-    String strBody = "login=" + name + "&password=" + password + "&remember_me=1";
-
-    NetResponse( resp, getNet().pullCookies( serverUrl+"client_login", strBody, this ) );
+    NetResponse( resp, getNet().pullCookies( getProtocol().getLoginUrl(), getProtocol().getLoginBody(name, password), this ) );
     
     if ( !resp.isResponseRecieved())
     {

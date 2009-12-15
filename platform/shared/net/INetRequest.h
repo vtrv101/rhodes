@@ -24,6 +24,7 @@ struct IRhoSession
 {
 	virtual void logout()=0;
 	virtual const String& getSession()=0;
+    virtual const String& getContentType()=0;
 };
 
 struct INetRequest
@@ -32,7 +33,7 @@ struct INetRequest
 
     virtual INetResponse* pullData(const String& strUrl, IRhoSession* oSession ) = 0;
     virtual INetResponse* pushData(const String& strUrl, const String& strBody, IRhoSession* oSession)=0;
-    virtual INetResponse* pushFile(const String& strUrl, const String& strFileName, IRhoSession* oSession)=0;
+    virtual INetResponse* pushFile(const String& strUrl, const String& strBody, const String& strFileName, IRhoSession* oSession)=0;
     virtual INetResponse* pullFile(const String& strUrl, const String& strFileName, IRhoSession* oSession)=0;
     virtual INetResponse* pullCookies(const String& strUrl, const String& strBody, IRhoSession* oSession)=0;
     //if strUrl.length() == 0 delete all cookies if possible

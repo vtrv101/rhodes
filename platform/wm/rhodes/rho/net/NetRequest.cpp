@@ -48,10 +48,10 @@ void CNetRequest::cancel()
         m_pCurNetRequestImpl->close();
 }
 
-INetResponse* CNetRequest::pushFile(const String& strUrl, const String& strFilePath, IRhoSession* oSession)
+INetResponse* CNetRequest::pushFile(const String& strUrl, const String& strBody, const String& strFilePath, IRhoSession* oSession)
 {
     common::CRhoFile oFile;
-    if ( !oFile.open(strFilePath.c_str(),common::CRhoFile::OpenReadOnly) ) 
+    if ( strFilePath.length() > 0 && !oFile.open(strFilePath.c_str(),common::CRhoFile::OpenReadOnly) ) 
     {
         LOG(ERROR) + "pushFile: cannot find file :" + strFilePath;
         return new CNetResponseImpl();
@@ -66,6 +66,7 @@ INetResponse* CNetRequest::pushFile(const String& strUrl, const String& strFileP
             delete pResp;
 
         CNetRequestImpl oImpl(this, "POST",strUrl);
+        //TODO: send body if exist
         pResp = oImpl.sendStream(oFile.getInputStream());
         nTry++;
 
@@ -111,7 +112,7 @@ INetResponse* CNetRequest::doRequest( const char* method, const String& strUrl, 
             delete pResp;
 
         CNetRequestImpl oImpl(this, method,strUrl);
-        pResp = oImpl.sendString(strBody);
+        pResp = oImpl.sendString(strBody, oSession ? oSession->getContentType() : "application/x-www-form-urlencoded");
         nTry++;
 
     }while( !m_bCancel && !pResp->isResponseRecieved() && nTry < MAX_NETREQUEST_RETRY );

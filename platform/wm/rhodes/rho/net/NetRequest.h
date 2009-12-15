@@ -18,7 +18,7 @@ public:
 
     virtual INetResponse* pullData(const String& strUrl, IRhoSession* oSession );
     virtual INetResponse* pushData(const String& strUrl, const String& strBody, IRhoSession* oSession);
-    virtual INetResponse* pushFile(const String& strUrl, const String& strFilePath, IRhoSession* oSession);
+    virtual INetResponse* pushFile(const String& strUrl, const String& strBody, const String& strFilePath, IRhoSession* oSession);
     virtual INetResponse* pullFile(const String& strUrl, const String& strFilePath, IRhoSession* oSession);
     virtual INetResponse* pullCookies(const String& strUrl, const String& strBody, IRhoSession* oSession);
     //if strUrl.length() == 0 delete all cookies if possible

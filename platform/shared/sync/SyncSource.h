@@ -15,9 +15,11 @@ namespace net {
 namespace json {
     class CJSONEntry;
     class CJSONArrayIterator;
+    class CJSONStructIterator;
 }
 
 namespace sync {
+struct ISyncProtocol;
 
 class CSyncBlob
 {
@@ -79,6 +81,7 @@ public:
     CSyncSource(int id, const String& strUrl, const String& strName, uint64 token, CSyncEngine& syncEngine );
     virtual void sync();
 
+    //TODO: remove getUrl
     String getUrl()const { return m_strUrl; }
     int getID()const { return m_nID; }
     String getName() { return m_strName; }
@@ -100,7 +103,10 @@ public:
     boolean isPendingClientChanges();
 
     void syncServerChanges();
-    void makePushBody(String& strBody, const char* szUpdateType);
+    void makePushBody(String& strBody, const String& strUpdateType);
+    void makePushBody_Ver3(String& strBody, const String& strUpdateType);
+    void afterSyncClientChanges(boolean arUpdateSent[]);
+
     void getAndremoveAsk();
     void setAskParams(const String& ask){ m_strAskParams = ask;}
     String getAskParams()const{ return m_strAskParams;}
@@ -114,9 +120,13 @@ public:
     int  getTotalCount(){return m_nTotalCount;}
     int  getProgressStep(){ return m_nProgressStep; }
 
-    void processServerData(const char* szData);
+    void processServerResponse(const char* szData);
     boolean processSyncObject_ver1(json::CJSONEntry oJsonObject, int nSrcID);//throws Exception
     void processServerData_Ver1(json::CJSONArrayIterator& oJsonArr);
+
+    void processServerResponse_ver3(const char* szData);
+    void processSourceData_ver3(json::CJSONArrayIterator& oJsonArr);
+    void processServerCmd_Ver3(const String& strCmd, const String& strObject, const String& strAttrib, const String& strValue);//throws Exception
 
     void setSyncServerDataPass(ESyncServerDataPass ePass){m_eSyncServerDataPass = ePass;}
     boolean isDeleteObjectsPass(){ return m_eSyncServerDataPass == edpDeleteObjects; }
@@ -133,6 +143,7 @@ private:
     CSyncNotify& getNotify();
     db::CDBAdapter& getDB();
     net::INetRequest& getNet();
+    ISyncProtocol& getProtocol();
 
 };
 

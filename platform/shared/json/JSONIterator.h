@@ -4,6 +4,8 @@
 
 struct json_object;
 struct array_list;
+struct lh_entry;
+struct lh_table;
 
 namespace rho {
 namespace json {
@@ -39,6 +41,7 @@ class CJSONArrayIterator
 public:
     CJSONArrayIterator(const char* szData);
 	CJSONArrayIterator(CJSONEntry& oEntry, const char* strName);
+    CJSONArrayIterator(CJSONEntry& oEntry);
     ~CJSONArrayIterator(void);
 
     boolean isEnd();
@@ -47,6 +50,25 @@ public:
     int     getCurPos(){ return m_nCurItem; }
 
     CJSONEntry getCurItem();
+};
+
+class CJSONStructIterator
+{
+    struct json_object* m_rootObject;
+    struct lh_table*    m_struct;
+    struct lh_entry*    m_curEntry;
+public:
+    CJSONStructIterator(const char* szData);
+	CJSONStructIterator(CJSONEntry& oEntry, const char* strName);
+    CJSONStructIterator(CJSONEntry& oEntry);
+    ~CJSONStructIterator(void);
+
+    boolean isEnd();
+    void    next();
+    void    reset();
+
+    String     getCurKey();
+    CJSONEntry getCurValue();
 };
 
 }
