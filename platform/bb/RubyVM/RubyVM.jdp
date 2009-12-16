@@ -432,9 +432,6 @@ ExcludeFromBuildAll=0
 ..\..\shared\rubyJVM\src\org\json\me\JSONObject.java
 ..\..\shared\rubyJVM\src\org\json\me\JSONString.java
 ..\..\shared\rubyJVM\src\org\json\me\JSONTokener.java
-.settings\net.rim.eide.keys.Project.prefs
-.settings\org.eclipse.jdt.core.prefs
-bin\package.html
 ]
 HaveAlxImports=0
 HaveDefs=0
@@ -457,5 +454,5 @@ RunOnStartup=0
 StartupTier=7
 SystemModule=0
 Type=2
-UserData=VIRTUAL_PROJECT||src
+UserData=|src
 Version=1.45
