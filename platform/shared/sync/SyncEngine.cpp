@@ -8,7 +8,6 @@
 #include "net/URI.h"
 #include "statistic/RhoProfiler.h"
 #include "ruby/ext/rho/rhoruby.h"
-#include "SyncProtocol_1.h"
 #include "SyncProtocol_3.h"
 
 namespace rho {
