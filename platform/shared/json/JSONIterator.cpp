@@ -35,7 +35,7 @@ CJSONArrayIterator::CJSONArrayIterator(const char* szData)
         m_array = json_object_get_array((struct json_object *)m_rootObject);
 }
 
-CJSONArrayIterator::CJSONArrayIterator(CJSONEntry& oEntry, const char* strName)
+CJSONArrayIterator::CJSONArrayIterator(const CJSONEntry& oEntry, const char* strName)
 {
     m_array = 0;
     m_nCurItem = 0;
@@ -46,7 +46,7 @@ CJSONArrayIterator::CJSONArrayIterator(CJSONEntry& oEntry, const char* strName)
         m_array = json_object_get_array( oItem.getObject() );
 }
 
-CJSONArrayIterator::CJSONArrayIterator(CJSONEntry& oEntry)
+CJSONArrayIterator::CJSONArrayIterator(const CJSONEntry& oEntry)
 {
     m_array = 0;
     m_nCurItem = 0;
@@ -100,7 +100,7 @@ CJSONStructIterator::CJSONStructIterator(const char* szData)
     }
 }
 
-CJSONStructIterator::CJSONStructIterator(CJSONEntry& oEntry, const char* strName)
+CJSONStructIterator::CJSONStructIterator(const CJSONEntry& oEntry, const char* strName)
 {
     m_struct = 0;
     m_curEntry = 0;
@@ -114,7 +114,7 @@ CJSONStructIterator::CJSONStructIterator(CJSONEntry& oEntry, const char* strName
     }
 }
 
-CJSONStructIterator::CJSONStructIterator(CJSONEntry& oEntry)
+CJSONStructIterator::CJSONStructIterator(const CJSONEntry& oEntry)
 {
     m_rootObject = 0;
 
@@ -230,7 +230,7 @@ uint64 CJSONEntry::getUInt64(const char* name)
     return nRes;
 }*/
 
-CJSONEntry CJSONEntry::getEntry(const char* name)
+CJSONEntry CJSONEntry::getEntry(const char* name)const
 {
     struct json_object* obj = json_object_object_get(m_object,const_cast<char*>(name));
 

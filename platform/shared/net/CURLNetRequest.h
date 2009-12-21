@@ -19,7 +19,7 @@ public:
 
     INetResponse *pullData(const String& strUrl, IRhoSession *oSession);
     INetResponse *pushData(const String& strUrl, const String& strBody, IRhoSession *oSession);
-    INetResponse *pushFile(const String& strUrl, const String& strFileName, IRhoSession *oSession);
+    INetResponse *pushFile(const String& strUrl, const String& strBody, const String& strFileName, IRhoSession *oSession);
     INetResponse *pullFile(const String& strUrl, const String& strFilePath, IRhoSession *oSession);
     INetResponse *pullCookies(const String& strUrl, const String& strBody, IRhoSession *oSession);
 

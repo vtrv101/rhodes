@@ -318,8 +318,13 @@ void CSyncNotify::doFireSyncNotification( CSyncSource* psrc, boolean bFinish, in
     {
         synchronized(m_mxSyncNotifications)
         {
-            CSyncNotification* pSN = src.isSearch() ? m_pSearchNotification : m_mapSyncNotifications.get(src.getID());
-            if ( pSN == 0 )
+            CSyncNotification* pSN = 0;
+			if ( src.isSearch() )
+				pSN = m_pSearchNotification;
+			else
+				pSN = m_mapSyncNotifications.get(src.getID());
+            
+			if ( pSN == 0 )
                 return;
             CSyncNotification& sn = *pSN;
 

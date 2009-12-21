@@ -28,9 +28,9 @@ public:
     const char* getString(const char* name);
     const char* getString();
 
-    CJSONEntry getEntry(const char* name);
+    CJSONEntry getEntry(const char* name)const;
 
-    struct json_object* getObject(){ return m_object; }
+    struct json_object* getObject()const{ return m_object; }
 };
 
 class CJSONArrayIterator
@@ -41,8 +41,8 @@ class CJSONArrayIterator
 
 public:
     CJSONArrayIterator(const char* szData);
-	CJSONArrayIterator(CJSONEntry& oEntry, const char* strName);
-    CJSONArrayIterator(CJSONEntry& oEntry);
+	CJSONArrayIterator(const CJSONEntry& oEntry, const char* strName);
+    CJSONArrayIterator(const CJSONEntry& oEntry);
     ~CJSONArrayIterator(void);
 
     boolean isEnd();
@@ -60,8 +60,8 @@ class CJSONStructIterator
     struct lh_entry*    m_curEntry;
 public:
     CJSONStructIterator(const char* szData);
-	CJSONStructIterator(CJSONEntry& oEntry, const char* strName);
-    CJSONStructIterator(CJSONEntry& oEntry);
+	CJSONStructIterator(const CJSONEntry& oEntry, const char* strName);
+    CJSONStructIterator(const CJSONEntry& oEntry);
     ~CJSONStructIterator(void);
 
     boolean isEnd();

@@ -431,7 +431,7 @@ INetResponse* CURLNetRequest::pullCookies(const String& strUrl, const String& st
     return resp;
 }
 
-INetResponse* CURLNetRequest::pushFile(const String& strUrl, const String& strFilePath, IRhoSession* oSession)
+INetResponse* CURLNetRequest::pushFile(const String& strUrl, const String& strBody, const String& strFilePath, IRhoSession* oSession)
 {
     common::CRhoFile oFile;
     if ( !oFile.open(strFilePath.c_str(),common::CRhoFile::OpenReadOnly) ) 
