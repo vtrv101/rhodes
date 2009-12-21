@@ -26,6 +26,7 @@ public:
     int getInt(const char* name);
     uint64 getUInt64(const char* name);
     const char* getString(const char* name);
+    const char* getString();
 
     CJSONEntry getEntry(const char* name);
 

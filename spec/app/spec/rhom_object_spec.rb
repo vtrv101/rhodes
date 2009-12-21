@@ -220,8 +220,8 @@ describe "Rhom::RhomObject" do
     @new_acct.acct_object.should == "same object"
   end
   
-  it "should _NOT_ set 'type' field for a record" do
-    new_attributes = {"type"=>"Partner"}
+  it "should _NOT_ set 'attrib_type' field for a record" do
+    new_attributes = {"attrib_type"=>"Partner"}
     @account = Account.find('44e804f2-4933-4e20-271c-48fcecd9450d')
     @account.update_attributes(new_attributes)
   
@@ -307,79 +307,6 @@ describe "Rhom::RhomObject" do
     @acct = Account.find('44e804f2-4933-4e20-271c-48fcecd9450d')
     
     @acct.foobar.should be_nil
-  end
-  
-  it "should respond to ask" do
-    question = 'Rhodes'
-    Account.ask(question)
-    res = Rhom::RhomDbAdapter::select_from_table('changed_values','*', 'update_type' => 'ask')
-    res.length.should == 1
-    
-    res[0]['attrib'].should == 'question'
-    res[0]['value'].should == question
-  end
-  
-  it "should respond to ask with last question only" do
-    question = 'Rhodes'
-    Account.ask(question)
-    res = Rhom::RhomDbAdapter::select_from_table('changed_values','*', 'update_type' => 'ask')
-    res.length.should == 1
-    
-    res[0]['attrib'].should == 'question'
-    res[0]['value'].should == question
-    
-    question = 'Ruby on Rails'
-    question_encoded = 'Ruby%20on%20Rails'
-    Account.ask(question)
-    res = Rhom::RhomDbAdapter::select_from_table('changed_values','*', 'update_type' => 'ask')
-    res.length.should == 1
-    
-    res[0]['attrib'].should == 'question'
-    res[0]['value'].should == question_encoded
-  end
-  
-  it "should encode ask params" do
-    question = 'where am i?'
-    question_encoded = 'where%20am%20i%3F'
-    Account.ask(question)
-    @res = Rhom::RhomDbAdapter::select_from_table('changed_values','*', 'update_type' => 'ask')
-    @res.length.should == 1
-    
-    @res[0]['attrib'].should == 'question'
-    @res[0]['value'].should == question_encoded
-  end
-  
-  it "should store all ask db operations as query" do
-    question = 'where am i?'
-    question_encoded = 'where%20am%20i%3F'
-    Question.ask(question) 
-   
-    @question = Question.find(:first)
-    @question.update_attributes({"question"=>"i am here"})
-
-    @res = Rhom::RhomDbAdapter::select_from_table('object_values','*', {'source_id' => @question.get_source_id.to_i()})
-    @res.length.should == 1
-    @res[0]['attrib'].should == 'question'
-    @res[0]['value'].should == 'i am here'
-    
-    ['create','update','delete'].each do |u_type|
-      @res = Rhom::RhomDbAdapter::select_from_table('changed_values','*', {'update_type' =>u_type, 'source_id' => @question.get_source_id.to_i()})
-      @res.length.should == 0
-    end
-  end
-  
-  it "should delete ask records without delete sync operation" do
-    question = 'where am i?'
-    question_encoded = 'where%20am%20i%3F'
-    Question.ask(question) 
-   
-    @question = Question.find(:first)
-    @question.destroy
-    
-    ['query','create','update','delete'].each do |u_type|
-      @res = Rhom::RhomDbAdapter::select_from_table('changed_values','*', {'update_type' =>u_type, 'source_id' => 400})
-      @res.length.should == 0
-    end
   end
   
   it "should find with conditions" do

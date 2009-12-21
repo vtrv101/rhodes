@@ -24,11 +24,9 @@ require 'rhom/rhom_object'
 require 'rhom/rhom_db_adapter'
 
 module Rhom
-  UPDATE_TYPES = ["'create'","'query'","'ask'"]
-  
   class RecordNotFound < StandardError
   end
-  
+
   class Rhom
     attr_accessor :factory
   
@@ -68,6 +66,36 @@ module Rhom
         database_full_reset
         SyncEngine.logout
       end
+      
+        def search(args)
+          searchParams = ""
+          
+          searchParams += '&offset=' + Rho::RhoSupport.url_encode(args[:offset]) if args[:offset]
+          searchParams += '&max_results=' + Rho::RhoSupport.url_encode(args[:max_results]) if args[:max_results]
+
+          callbackParams = args[:callback_param] ? args[:callback_param] : ""
+          
+          if args[:search_params]
+            args[:search_params].each do |key,value|
+              searchParams += '&' + "conditions[#{Rho::RhoSupport.url_encode(key)}]" + '=' + Rho::RhoSupport.url_encode(value)
+              callbackParams += '&' + "search_params[#{Rho::RhoSupport.url_encode(key)}]" + '=' + Rho::RhoSupport.url_encode(value)
+            end  
+          end
+            
+          #set_notification(args[:callback], args[:callback_param]) if args[:callback]
+          src_ar = args[:sources]
+          
+          #check sources
+          raise ArgumentError, "no sources on search" if src_ar.nil? or src_ar.length == 0
+          src_ar.each do |src_name|
+             raise ArgumentError, "no sources on search" if Rho::RhoConfig::sources[src_name].nil?
+          end
+          
+          SyncEngine.dosearch_source(src_ar, args[:from] ? args[:from] : 'search',
+            searchParams, args[:sync_changes] ? args[:sync_changes] : false, args[:progress_step] ? args[:progress_step] : -1,
+            args[:callback], callbackParams )
+        end
+      
     end #class methods
   end # Rhom
 end # Rhom

@@ -2,6 +2,7 @@
 
 #include "common/RhoStd.h"
 #include "logging/RhoLog.h"
+#include "common/AutoPointer.h"
 
 namespace rho {
 namespace db {
@@ -43,7 +44,7 @@ private:
     static common::CMutex m_mxObjectNotify;
 
     HashtablePtr<int,CSyncNotification*> m_mapSyncNotifications;
-    HashtablePtr<int,CSyncNotification*> m_mapSearchNotifications;
+    common::CAutoPtr<CSyncNotification> m_pSearchNotification;
     common::CMutex m_mxSyncNotifications;
 
     net::INetRequest& getNet();
@@ -66,7 +67,7 @@ public:
 
     //Sync notifications
     void setSyncNotification(int source_id, String strUrl, String strParams );
-    void setSearchNotification(int source_id, String strUrl, String strParams );
+    void setSearchNotification(String strUrl, String strParams );
 
     void clearSyncNotification(int source_id);
     void clearNotification(CSyncSource& src);

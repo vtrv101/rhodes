@@ -93,33 +93,32 @@ module Rho
     def init_sources
       if defined? Rho::RhoConfig::sources
         
-        # quick and dirty way to get unique array of hashes
-        #uniq_sources = Rho::RhoConfig::sources.values.inject([]) { |result,h| 
-        #  result << h unless result.include?(h); result
-        #}
         uniq_sources = Rho::RhoConfig::sources.values
         puts 'init_sources: ' + uniq_sources.inspect
 
         result = ::Rhom::RhomDbAdapter.execute_sql("SELECT MAX(source_id) AS maxid FROM sources")
-        #puts 'result: ' + result.inspect
         start_id = result.length > 0 && result[0]['maxid'] ? result[0]['maxid']+1 : 0
         
         # generate unique source list in database for sync
         uniq_sources.each do |source|
           
-          url = source['url']
           name = source['name']
           priority = source['priority']
-          attribs = Rhom::RhomDbAdapter::select_from_table('sources','priority,source_id', 'name'=>name)
+          should_sync = source['sync'] ? 1 : 0
+          attribs = Rhom::RhomDbAdapter::select_from_table('sources','priority,source_id,should_sync', 'name'=>name)
 
           if attribs && attribs.size > 0 
             if attribs[0]['priority'].to_i != priority.to_i
                 Rhom::RhomDbAdapter::update_into_table('sources', {"priority"=>priority},{"name"=>name})
             end
+            if attribs[0]['should_sync'] != should_sync
+                Rhom::RhomDbAdapter::update_into_table('sources', {"should_sync"=>should_sync},{"name"=>name})
+            end
+            
             Rho::RhoConfig::sources[name]['source_id'] = attribs[0]['source_id'].to_i
           else
             Rhom::RhomDbAdapter::insert_into_table('sources',
-                {"source_id"=>start_id,"source_url"=>url,"name"=>name, "priority"=>priority})
+                {"source_id"=>start_id,"name"=>name, "priority"=>priority, "should_sync"=>should_sync})
             Rho::RhoConfig::sources[name]['source_id'] = start_id
             
             start_id += 1
@@ -356,7 +355,15 @@ module Rho
         @@sources[modelname] = new_source ? new_source : {}
         @@sources[modelname]['name'] ||= modelname
         @@sources[modelname]['priority'] ||= 1000
+        
+        if @@sources[modelname]['url'] && @@sources[modelname]['url'].length() == 0
+            @@sources[modelname]['sync'] = false
+        end
 
+        if @@sources[modelname]['sync'].nil?
+            @@sources[modelname]['sync'] = true
+        end
+        
 #        if new_source
 #          unless @@sources[modelname]
 #            @@sources[modelname] = new_source

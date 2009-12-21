@@ -45,71 +45,64 @@ public:
     CValue(json::CJSONEntry& oJsonEntry, int nVer);//throws JSONException
 };
 
+
 class CSyncEngine;
 class CSyncNotify;
 class CSyncSource
 {
     DEFINE_LOGCLASS;
 
-    enum ESyncServerDataPass{ edpNone, edpDeleteObjects };
-
     CSyncEngine& m_syncEngine;
 
     int    m_nID;
     String m_strName;
-    String m_strUrl;
     uint64 m_token;
     boolean m_bTokenFromDB;
 
     int m_nCurPageCount, m_nInserted, m_nDeleted, m_nTotalCount;
     boolean m_bGetAtLeastOnePage;
-    ESyncServerDataPass m_eSyncServerDataPass;
     int m_nRefreshTime;
+    int m_nProgressStep;
 
 public:
     int m_nErrCode;
     String m_strError;
-    String m_strParams;
-    String m_strAction;
-    boolean m_bSearchSyncChanges;
-    int     m_nProgressStep;
+    boolean m_bIsSearch;
 private:
     VectorPtr<CSyncBlob*> m_arSyncBlobs;
-    String m_strAskParams;
 
 public:
-    CSyncSource(int id, const String& strUrl, const String& strName, uint64 token, CSyncEngine& syncEngine );
+    CSyncSource(int id, const String& strName, uint64 token, CSyncEngine& syncEngine );
     virtual void sync();
+    virtual boolean syncClientChanges();
 
-    //TODO: remove getUrl
-    String getUrl()const { return m_strUrl; }
     int getID()const { return m_nID; }
     String getName() { return m_strName; }
     int getServerObjectsCount()const{ return m_nInserted+m_nDeleted; }
-    boolean isSearch()const{ return m_strParams.length() > 0;}
+    boolean isSearch()const{ return m_bIsSearch;}
 
     uint64 getToken()const{ return m_token; }
+    boolean isTokenFromDB(){ return m_bTokenFromDB; }
     void setToken(uint64 token){ m_token = token; m_bTokenFromDB = false; }
     virtual boolean isEmptyToken()
     {
         return m_token == 0;
     }
 
+    int getProgressStep(){ return m_nProgressStep; }
+    void setProgressStep(int nProgressStep){ m_nProgressStep = nProgressStep; }
+
 //private:
     CSyncSource();
     CSyncSource(CSyncEngine& syncEngine );
 
-    void syncClientChanges();
+    void doSyncClientChanges();
     boolean isPendingClientChanges();
 
     void syncServerChanges();
-    void makePushBody(String& strBody, const String& strUpdateType);
     void makePushBody_Ver3(String& strBody, const String& strUpdateType);
     void afterSyncClientChanges(boolean arUpdateSent[]);
 
-    void getAndremoveAsk();
-    void setAskParams(const String& ask){ m_strAskParams = ask;}
-    String getAskParams()const{ return m_strAskParams;}
     void processToken(uint64 token);
 
     int getInsertedCount()const { return m_nInserted; }
@@ -118,18 +111,9 @@ public:
     void setTotalCount(int nTotalCount){m_nTotalCount = nTotalCount;}
     int  getCurPageCount(){return m_nCurPageCount;}
     int  getTotalCount(){return m_nTotalCount;}
-    int  getProgressStep(){ return m_nProgressStep; }
 
-    void processServerResponse(const char* szData);
-    boolean processSyncObject_ver1(json::CJSONEntry oJsonObject, int nSrcID);//throws Exception
-    void processServerData_Ver1(json::CJSONArrayIterator& oJsonArr);
-
-    void processServerResponse_ver3(const char* szData);
-    void processSourceData_ver3(json::CJSONArrayIterator& oJsonArr);
+    void processServerResponse_ver3(json::CJSONArrayIterator& oJsonArr);
     void processServerCmd_Ver3(const String& strCmd, const String& strObject, const String& strAttrib, const String& strValue);//throws Exception
-
-    void setSyncServerDataPass(ESyncServerDataPass ePass){m_eSyncServerDataPass = ePass;}
-    boolean isDeleteObjectsPass(){ return m_eSyncServerDataPass == edpDeleteObjects; }
 
     VectorPtr<CSyncBlob*>& getSyncBlobs(){ return m_arSyncBlobs; }
     void syncClientBlobs(const String& strBaseQuery);

@@ -194,6 +194,11 @@ const char* CJSONEntry::getString(const char* name)
     return szRes;
 }
 
+const char* CJSONEntry::getString()
+{
+    return json_object_get_string(m_object);
+}
+
 int CJSONEntry::getInt(const char* name)
 {
     int nRes = 0;

@@ -53,20 +53,30 @@ struct CSyncProtocol_3 : public ISyncProtocol
 
     String getClientChangesUrl(const String& /*strSrcName*/, const String& /*strUpdateType*/, const String& /*strClientID*/)
     {
-        return RHOCONF().getPath("syncserver");
+        String strUrl = RHOCONF().getPath("syncserver");
+        return strUrl.substr(0,strUrl.length()-1);
     }
 
-    String getServerQueryUrl(const String& strSrcName, const String& strAction, const String& strAskParams)
+    String getServerQueryUrl(const String& strAction )
     {
         String strUrl = RHOCONF().getPath("syncserver");
         if ( strAction.length() > 0 )
             strUrl += strAction;
-        else if ( strAskParams.length() > 0 )
-            strUrl += "ask";
         else
             strUrl = strUrl.substr(0,strUrl.length()-1);
 
         return strUrl;
+    }
+
+    String getServerQueryBody(const String& strSrcName, const String& strClientID, int nPageSize )
+    {
+        String strQuery = "?client_id=" + strClientID + 
+                "&p_size=" + common::convertToStringA(nPageSize) + "&version=3";
+        
+        if ( strSrcName.length() > 0 )
+            strQuery += "&source_name=" + strSrcName;
+
+        return strQuery;
     }
 
 };

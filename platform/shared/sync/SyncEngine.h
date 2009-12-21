@@ -36,19 +36,15 @@ class CSyncEngine : public net::IRhoSession
 {
     DEFINE_LOGCLASS;
 public:
-    enum ESyncState{ esNone, esSyncAllSources, esSyncSource, esStop, esExit };
-
-    //static String SYNC_SOURCE_FORMAT() { return "?format=json"; }
-    //static int SYNC_VERSION() { return 2; }
-
-    //static String SYNC_ASK_ACTION() { return "/ask"; }
-//    static int MAX_SYNC_TRY_COUNT() { return 2; }
+    enum ESyncState{ esNone, esSyncAllSources, esSyncSource, esSearch, esStop, esExit };
 
     struct CSourceID
     {
         String m_strName;
-        String m_strUrl;
         int m_nID;
+
+        CSourceID(int id, const String& strName ){ m_nID = id; m_strName = strName; }
+        CSourceID(const String& strName ){ m_strName = strName; }
 
         String toString()const;
         boolean isEqual(CSyncSource& src)const;
@@ -76,7 +72,9 @@ public:
     }
 
     void doSyncAllSources();
-    void doSyncSource(const CSourceID& oSrcID, String strParams, String strAction, boolean bSearchSyncChanges, int nProgressStep);
+    void doSyncSource(const CSourceID& oSrcID);
+    void doSearch(rho::Vector<rho::String>& arSources, String strParams, String strAction, boolean bSearchSyncChanges, int nProgressStep);
+
     void login(String name, String password, String callback);
     boolean isLoggedIn();
     String loadSession();
@@ -103,6 +101,8 @@ public:
 
     void loadAllSources();
     void syncAllSources();
+    void prepareSync(ESyncState eState);
+
     VectorPtr<CSyncSource*>& getSources(){ return m_sources; }
     int getStartSource();
     String loadClientID();
@@ -116,7 +116,6 @@ public:
 
     CSyncSource* findSourceByName(const String& strSrcName);
 
-    String SYNC_PAGE_SIZE();
     int getSyncPageSize() { return m_nSyncPageSize; }
     void setSyncPageSize(int nPageSize){ m_nSyncPageSize = nPageSize; }
 private:
@@ -124,7 +123,6 @@ private:
     CSyncSource* findSource(const CSourceID& oSrcID);
 
     void callLoginCallback(String callback, int nErrCode, String strMessage);
-    boolean checkAllSourcesFromOneDomain();
 
     void initProtocol();
 

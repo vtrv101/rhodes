@@ -162,31 +162,16 @@ void CSyncThread::processCommand(CSyncCommand& oSyncCmd)
         break;
     case scChangePollInterval:
         break;
-    case scSyncOneByUrl:
-        {
-            CSyncEngine::CSourceID oSrcID;
-            oSrcID.m_strUrl = oSyncCmd.m_strCmdParam;
-
-            m_oSyncEngine.doSyncSource(oSrcID,"","",false, -1 );
-        }
-        break;
     case scSyncOne:
         {
-            CSyncEngine::CSourceID oSrcID;
-            oSrcID.m_nID = oSyncCmd.m_nCmdParam;
-            oSrcID.m_strName = oSyncCmd.m_strCmdParam;
-
-            m_oSyncEngine.doSyncSource(oSrcID,"","",false, -1 );
+            m_oSyncEngine.doSyncSource(CSyncEngine::CSourceID(oSyncCmd.m_nCmdParam,oSyncCmd.m_strCmdParam));
         }
         break;
     case scSearchOne:
         {
-            CSyncEngine::CSourceID oSrcID;
-            oSrcID.m_nID = oSyncCmd.m_nCmdParam;
-
-            m_oSyncEngine.doSyncSource(oSrcID,oSyncCmd.m_strCmdParam, 
+            m_oSyncEngine.doSearch( ((CSyncSearchCommand&)oSyncCmd).m_arSources, oSyncCmd.m_strCmdParam, 
                 ((CSyncSearchCommand&)oSyncCmd).m_strFrom, ((CSyncSearchCommand&)oSyncCmd).m_bSyncChanges,
-                ((CSyncSearchCommand&)oSyncCmd).m_nProgressStep);
+                oSyncCmd.m_nCmdParam);
         }
         break;
     case scLogin:
@@ -241,19 +226,35 @@ void rho_sync_stop()
 	}
 }
 
-void rho_sync_doSearchSource(int source_id, const char *from, const char *params, bool sync_changes, int nProgressStep, 
+extern "C" void
+source_iter(const char* szName, void* parSources)
+{
+    rho::Vector<rho::String>& arSources = *((rho::Vector<rho::String>*)(parSources));
+    arSources.addElement(szName);
+}
+
+void rho_sync_doSearch(unsigned long ar_sources, const char *from, const char *params, bool sync_changes, int nProgressStep, 
     const char* callback, const char* callback_params)
 {
     rho_sync_stop();
     if ( callback && *callback )
-        CSyncThread::getSyncEngine().getNotify().setSearchNotification(source_id, callback, callback_params ? callback_params : "");
+        CSyncThread::getSyncEngine().getNotify().setSearchNotification( callback, callback_params ? callback_params : "");
 
-    CSyncThread::getInstance()->addSyncCommand(new CSyncThread::CSyncSearchCommand(from,params,source_id,sync_changes,nProgressStep) );
+    rho::Vector<rho::String> arSources;
+    rho_ruby_enum_strary(ar_sources, source_iter, &arSources);
+
+    CSyncThread::getInstance()->addSyncCommand(new CSyncThread::CSyncSearchCommand(from,params,arSources,sync_changes,nProgressStep) );
 }	
 
 void rho_sync_doSyncSourceByUrl(const char* szSrcUrl)
 {
-    CSyncThread::getInstance()->addSyncCommand(new CSyncThread::CSyncCommand(CSyncThread::scSyncOneByUrl, szSrcUrl) );
+    const char* szLastSlash = strrchr(szSrcUrl, '\\');
+    if ( !szLastSlash )
+        szLastSlash = strrchr(szSrcUrl, '/');
+
+    rho::String strName = szLastSlash ? szLastSlash + 1 : szSrcUrl;
+    
+    CSyncThread::getInstance()->addSyncCommand(new CSyncThread::CSyncCommand(CSyncThread::scSyncOne, strName, (int)0 ) );
 }	
 
 void rho_sync_set_pollinterval(int nInterval)

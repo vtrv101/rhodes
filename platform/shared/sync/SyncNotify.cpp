@@ -253,18 +253,18 @@ void CSyncNotify::setSyncNotification(int source_id, String strUrl, String strPa
     }
 }
 
-void CSyncNotify::setSearchNotification(int source_id, String strUrl, String strParams )
+void CSyncNotify::setSearchNotification(String strUrl, String strParams )
 {
-	LOG(INFO) + "Set search notification. Source ID: " + source_id + "; Url :" + strUrl + "; Params: " + strParams;
+	LOG(INFO) + "Set search notification. Url :" + strUrl + "; Params: " + strParams;
     String strFullUrl = getNet().resolveUrl(strUrl);
 
     if ( strFullUrl.length() > 0 )
     {
         synchronized(m_mxSyncNotifications)
         {
-            m_mapSearchNotifications.put(source_id,new CSyncNotification( strFullUrl, strParams, true ) );
+            m_pSearchNotification = new CSyncNotification( strFullUrl, strParams, true );
 
-	        LOG(INFO) + " Done Set search notification. Source ID: " + source_id + "; Url :" + strFullUrl + "; Params: " + strParams;
+	        LOG(INFO) + " Done Set search notification. Url :" + strFullUrl + "; Params: " + strParams;
         }
     }
 }
@@ -295,7 +295,7 @@ void CSyncNotify::fireSyncNotification( CSyncSource* psrc, boolean bFinish, int 
 	
 	if( strMessage.length() > 0 || nErrCode != RhoRuby.ERR_NONE)
 	{
-		if ( !( psrc != null && psrc->m_strParams.length()>0) )
+		if ( !( psrc != null && psrc->isSearch()) )
         {
 			if ( psrc != null && strMessage.length() == 0 )
 				strMessage = RhoRuby.getMessageText("sync_failed_for") + psrc->getName() + ".";
@@ -318,7 +318,7 @@ void CSyncNotify::doFireSyncNotification( CSyncSource* psrc, boolean bFinish, in
     {
         synchronized(m_mxSyncNotifications)
         {
-            CSyncNotification* pSN = src.isSearch() ? m_mapSearchNotifications.get(src.getID()) : m_mapSyncNotifications.get(src.getID());
+            CSyncNotification* pSN = src.isSearch() ? m_pSearchNotification : m_mapSyncNotifications.get(src.getID());
             if ( pSN == 0 )
                 return;
             CSyncNotification& sn = *pSN;
@@ -386,7 +386,7 @@ void CSyncNotify::clearNotification(CSyncSource& src)
     synchronized(m_mxSyncNotifications)
     {
         if ( src.isSearch() )
-            m_mapSearchNotifications.remove(src.getID());
+            m_pSearchNotification = null;
         else
             m_mapSyncNotifications.remove(src.getID());
     }

@@ -116,15 +116,12 @@ module Rhogen
         name        - model name
         attributes  - list of one or more string attributes (i.e. name,industry,progress), NO spaces between attributes
         
-      Optional:
-        type        - optional type (i.e. "ask" for an ask model) 
     DESC
 
     #option :testing_framework, :desc => 'Specify which testing framework to use (spec, test_unit)'
 
     first_argument :name, :required => true, :desc => "model name"
     second_argument :attributes, :as => :array, :required => true, :desc => "list of one or more string attributes (i.e. name,industry,progress), NO spaces between attributes"
-    third_argument :type, :required => false, :desc => "optional type (i.e. \"ask\" for an ask model)"
 
     template :config do |template|
       @model_sync_server = syncserver_exists? ? class_name : ''

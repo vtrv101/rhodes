@@ -1172,10 +1172,6 @@
 				>
 			</File>
 			<File
-				RelativePath="..\..\shared\sync\SyncProtocol_1.h"
-				>
-			</File>
-			<File
 				RelativePath="..\..\shared\sync\SyncProtocol_3.h"
 				>
 			</File>
