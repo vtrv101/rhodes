@@ -4,6 +4,7 @@ namespace "config" do
   task :common do
     $config = Jake.config(File.open($buildyml))  
     $basedir = pwd
+    puts "basedir in config: #{$basedir.inspect}"
     $bindir = File.join($basedir,'bin')
     $tmpdir = File.join($bindir,'tmp')
     $targetdir =  File.join($bindir,'target')

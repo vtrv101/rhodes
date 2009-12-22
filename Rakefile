@@ -9,7 +9,7 @@ module Rake
   end
 end
 
-
+$app_basedir = pwd
 chdir File.dirname(__FILE__)
 
 require 'lib/build/jake.rb'
@@ -19,8 +19,7 @@ load 'platform/android/build/android.rake'
 load 'platform/iphone/rbuild/iphone.rake'
 load 'platform/wm/build/wm.rake'
 load 'platform/linux/tasks/linux.rake'
-
-
+load 'lib/build/tasks/rhosync.rake'
 
 namespace "config" do
   task :common do
