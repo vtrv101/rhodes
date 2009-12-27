@@ -92,6 +92,9 @@ public:
     int getProgressStep(){ return m_nProgressStep; }
     void setProgressStep(int nProgressStep){ m_nProgressStep = nProgressStep; }
 
+    boolean getGetAtLeastOnePage(){ return m_bGetAtLeastOnePage; }
+    int getRefreshTime(){ return m_nRefreshTime; }
+
 //private:
     CSyncSource();
     CSyncSource(CSyncEngine& syncEngine );

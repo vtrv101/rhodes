@@ -8,6 +8,7 @@
 #include "net/URI.h"
 #include "statistic/RhoProfiler.h"
 #include "ruby/ext/rho/rhoruby.h"
+#include "common/RhoTime.h"
 #include "SyncProtocol_3.h"
 
 namespace rho {
@@ -113,6 +114,8 @@ void CSyncEngine::doSearch(rho::Vector<rho::String>& arSources, String strParams
 
         return;
     }
+
+    CTimeInterval startTime = CTimeInterval::getCurrentTime();
 
     if ( bSearchSyncChanges )
     {
@@ -222,6 +225,23 @@ void CSyncEngine::doSearch(rho::Vector<rho::String>& arSources, String strParams
         src.m_bIsSearch = true;
         getNotify().fireSyncNotification(&src, true, src.m_nErrCode, "");
     }
+
+    //update db info
+    CTimeInterval endTime = CTimeInterval::getCurrentTime();
+    unsigned long timeUpdated = CLocalTime().toULong();
+    for ( int i = 0; i < (int)arSources.size(); i++ )
+    {
+        CSyncSource* pSrc = findSourceByName(arSources.elementAt(i));
+        if ( pSrc == null )
+            continue;
+        CSyncSource& oSrc = *pSrc;
+        getDB().executeSQL("UPDATE sources set last_updated=?,last_inserted_size=?,last_deleted_size=?, \
+						 last_sync_duration=?,last_sync_success=?, backend_refresh_time=? WHERE source_id=?", 
+                         timeUpdated, oSrc.getInsertedCount(), oSrc.getDeletedCount(), 
+                         (endTime-startTime).toULong(), oSrc.getGetAtLeastOnePage(), oSrc.getRefreshTime(),
+                         oSrc.getID() );
+    }
+    //
 
     getNotify().cleanCreateObjectErrors();
     if ( getState() != esExit )
@@ -362,6 +382,7 @@ int CSyncEngine::getStartSource()
 
 void CSyncEngine::syncAllSources()
 {
+    //TODO: do not stop on error source
     boolean bError = false;
     for( int i = getStartSource(); i < (int)m_sources.size() && isContinueSync(); i++ )
     {
