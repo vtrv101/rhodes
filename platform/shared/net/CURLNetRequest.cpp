@@ -153,7 +153,7 @@ static curl_slist *set_curl_options(CURL *curl, const char *method, const String
 static curl_slist *set_curl_options(CURL *curl, const char *method, const String& strUrl,
                              const String& strBody, const String& session, const String& contentType, String& result)
 {
-    curl_slist *retval = set_curl_options(curl, method, strUrl, session, contentType, result);
+    curl_slist *retval = set_curl_options(curl, method, strUrl, session, !strBody.empty() ? contentType : "", result);
     if (strcasecmp(method, "POST") == 0) {
         curl_easy_setopt(curl, CURLOPT_POSTFIELDSIZE, strBody.size());
         curl_easy_setopt(curl, CURLOPT_POSTFIELDS, strBody.c_str());
