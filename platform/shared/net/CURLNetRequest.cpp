@@ -111,7 +111,7 @@ static size_t curlHeaderCallback(void *ptr, size_t size, size_t nmemb, void *opa
 #endif
 
 static curl_slist *set_curl_options(CURL *curl, const char *method, const String& strUrl,
-                             const String& session, String& result)
+                             const String& session, const String& contentType, String& result)
 {
     curl_easy_reset(curl);
     if (strcasecmp(method, "GET") == 0)
@@ -139,15 +139,21 @@ static curl_slist *set_curl_options(CURL *curl, const char *method, const String
 	hdrs = curl_slist_append(hdrs, "Expect:");
 	// Add Keep-Alive header
 	hdrs = curl_slist_append(hdrs, "Connection: Keep-Alive");
+    if ( !contentType.empty() )
+    {
+        String ctHeader = "Content-Type: " + contentType;
+        hdrs = curl_slist_append(hdrs, ctHeader);
+    }
+
 	curl_easy_setopt(curl, CURLOPT_HTTPHEADER, hdrs);
 	
 	return hdrs;
 }
 
 static curl_slist *set_curl_options(CURL *curl, const char *method, const String& strUrl,
-                             const String& strBody, const String& session, String& result)
+                             const String& strBody, const String& session, const String& contentType, String& result)
 {
-    curl_slist *retval = set_curl_options(curl, method, strUrl, session, result);
+    curl_slist *retval = set_curl_options(curl, method, strUrl, session, contentType, result);
     if (strcasecmp(method, "POST") == 0) {
         curl_easy_setopt(curl, CURLOPT_POSTFIELDSIZE, strBody.size());
         curl_easy_setopt(curl, CURLOPT_POSTFIELDS, strBody.c_str());
@@ -191,8 +197,13 @@ char* CURLNetRequest::request(const char *method, const String& strUrl, const St
     if (pnRespCode)
         *pnRespCode = -1;
     String session;
+    String contentType = "application/x-www-form-urlencoded";
     if (oSession)
+    {
         session = oSession->getSession();
+        contentType = oSession->getContentType();
+    }
+
     if (session.empty() && !isLocalHost(strUrl))
         return NULL;
 
@@ -201,7 +212,7 @@ char* CURLNetRequest::request(const char *method, const String& strUrl, const St
     rho_net_impl_network_indicator(1);
 
     String result;
-    curl_slist *hdrs = set_curl_options(curl, method, strUrl, strBody, session, result);
+    curl_slist *hdrs = set_curl_options(curl, method, strUrl, strBody, session, contentType, result);
 	//curl_easy_perform(curl);
 	CURLMcode err = do_curl_perform(curlm, curl);
 	curl_slist_free_all(hdrs);
@@ -245,8 +256,13 @@ char* CURLNetRequest::requestCookies(const char *method, const String& strUrl, c
     if (pnRespCode)
         *pnRespCode = -1;
     String session;
+    String contentType = "application/x-www-form-urlencoded";
     if (oSession)
+    {
         session = oSession->getSession();
+        contentType = oSession->getContentType();
+    }
+
     if (!session.empty()) {
         RAWLOG_INFO("Found existing session for url...");
 
@@ -261,7 +277,7 @@ char* CURLNetRequest::requestCookies(const char *method, const String& strUrl, c
     rho_net_impl_network_indicator(1);
 
     String result;
-    curl_slist *hdrs = set_curl_options(curl, method, strUrl, strBody, session, result);
+    curl_slist *hdrs = set_curl_options(curl, method, strUrl, strBody, session, contentType, result);
     //curl_easy_perform(curl);
 	CURLMcode err = do_curl_perform(curlm, curl);
 	curl_slist_free_all(hdrs);
@@ -346,7 +362,7 @@ char* CURLNetRequest::pushMultipartData(const String& strUrl, const String& strF
         rho_net_impl_network_indicator(1);
 
         String result;
-        curl_slist *hdrs = set_curl_options(curl, "POST", strUrl, session, result);
+        curl_slist *hdrs = set_curl_options(curl, "POST", strUrl, session, "", result);
 
         curl_httppost *post = NULL, *last = NULL;
         curl_easy_setopt(curl, CURLOPT_POSTFIELDS, NULL);
