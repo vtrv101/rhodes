@@ -162,7 +162,7 @@ void CSyncSource::doSyncClientChanges()
     boolean arUpdateSent[] = {false, false, false};
 
     m_arSyncBlobs.removeAllElements();
-    String strBody = "{\"source_name\":\"" + getName() + "\",\"client_id\":\"" + getSync().getClientID() + "\",";
+    String strBody = "{\"source_name\":\"" + getName() + "\",\"client_id\":\"" + getSync().getClientID() + "\"";
     boolean bSend = false;
     for( int i = 0; i < 3 && getSync().isContinueSync(); i++ )
     {
@@ -170,7 +170,7 @@ void CSyncSource::doSyncClientChanges()
         makePushBody_Ver3(strBody1, arUpdateTypes[i]);
         if (strBody1.length() > 0)
         {
-            strBody += strBody1;
+            strBody += "," + strBody1;
             arUpdateSent[i] = true;
             bSend = true;
         }
@@ -274,21 +274,36 @@ void CSyncSource::makePushBody_Ver3(String& strBody, const String& strUpdateType
         if ( strObject.compare(strCurObject) != 0 )
         {
             if ( strCurObject.length() > 0 )
-                strBody += "},";
+            {
+                if ( !bFirst )
+                    strBody += "}";
+                strBody += ",";
+            }
 
-            strBody += "\"" + strObject + "\":{";
+            strBody += "\"" + strObject + "\"";
             strCurObject = strObject;
         }
 
         if (!bFirst)
             strBody += ",";
 
-        strBody += "\"" + strAttrib + "\":\"" + value + "\"";
-        bFirst = false;
+        if ( strAttrib.length() > 0  )
+        {
+            if ( bFirst )
+                strBody += ":{";
+
+            strBody += "\"" + strAttrib + "\":\"" + value + "\"";
+            bFirst = false;
+        }
     }
 
     if ( strBody.length() > 0 )
-        strBody += "}}";
+    {
+        if ( !bFirst )
+            strBody += "}";
+
+        strBody += "}";
+    }
 
     getDB().executeSQL("UPDATE changed_values SET sent=1 WHERE source_id=? and update_type=? and sent=0", getID(), strUpdateType.c_str() );
     getDB().Unlock();
