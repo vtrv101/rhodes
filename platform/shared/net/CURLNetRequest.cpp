@@ -142,7 +142,7 @@ static curl_slist *set_curl_options(CURL *curl, const char *method, const String
     if ( !contentType.empty() )
     {
         String ctHeader = "Content-Type: " + contentType;
-        hdrs = curl_slist_append(hdrs, ctHeader);
+        hdrs = curl_slist_append(hdrs, ctHeader.c_str());
     }
 
 	curl_easy_setopt(curl, CURLOPT_HTTPHEADER, hdrs);
