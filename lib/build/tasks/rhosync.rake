@@ -28,7 +28,7 @@ namespace "rhosync" do
     compress(name)
     $agent.post("#{$url}/api/import_app",
       :app_name => $appname, :api_token => $token,
-      :upload_file =>  File.new(File.join($app_basedir,'rhosync','rhosync.zip')))
+      :upload_file =>  File.new(File.join($app_basedir,'rhosync','rhosync.zip'), "rb"))
     FileUtils.rm archive(name), :force => true
   end
   
