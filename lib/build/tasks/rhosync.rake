@@ -41,8 +41,8 @@ namespace "rhosync" do
   task :create_user => :config do
     login = ask "login: "
     password = ask "password: "
-    $agent.post("#{$url}/api/create_user", :app_name => $appname, :api_token => $token,
-      :attributes => {:login => login, :password => password})
+    $agent.post("#{$url}/api/create_user", :app_name => $appname, :api_token => $token, 
+      :login => login, :password => password)
   end
 end
 
