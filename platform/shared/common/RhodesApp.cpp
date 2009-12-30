@@ -194,6 +194,7 @@ void CRhodesApp::callCameraCallback(String strCallbackUrl, const String& strImag
     }else
         strBody = "status=ok&image_uri=%2Fpublic%2Fdb-files%2F" + strImagePath;
 
+    strBody += "&rho_callback=1";
     NetRequest( getNet().pushData( strCallbackUrl, strBody, null ) );
 }
 
@@ -212,6 +213,7 @@ void CRhodesApp::callDateTimeCallback(String strCallbackUrl, long lDateTime, con
         strBody += szData;
     }
 
+    strBody += "&rho_callback=1";
     NetRequest( getNet().pushData( strCallbackUrl, strBody, null ) );
 }
 
@@ -231,7 +233,7 @@ static void callback_geolocation(void *arg
     double longitude = geo_longitude();
 
     char location[256];
-    sprintf(location,"%.4f\xb0 %s, %.4f\xb0 %s;%f;%f",
+    sprintf(location,"%.4f\xc2\xb0 %s, %.4f\xc2\xb0 %s;%f;%f",
         fabs(latitude),latitude < 0 ? "South" : "North",
         fabs(longitude),longitude < 0 ? "West" : "East",
         latitude,longitude);

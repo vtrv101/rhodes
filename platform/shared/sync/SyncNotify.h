@@ -24,6 +24,8 @@ class CSyncNotify
     {
         String m_strUrl, m_strParams;
         boolean m_bRemoveAfterFire;
+        CSyncNotification(){m_bRemoveAfterFire = false;}
+
         CSyncNotification(String strUrl, String strParams, boolean bRemoveAfterFire) : 
             m_strUrl(strUrl), m_strParams(strParams), m_bRemoveAfterFire(bRemoveAfterFire){}
     };
@@ -45,6 +47,7 @@ private:
 
     HashtablePtr<int,CSyncNotification*> m_mapSyncNotifications;
     common::CAutoPtr<CSyncNotification> m_pSearchNotification;
+	CSyncNotification m_initialSyncNotify;
     common::CMutex m_mxSyncNotifications;
 
     net::INetRequest& getNet();
@@ -74,6 +77,10 @@ public:
 
     void onSyncSourceEnd( int nSrc, VectorPtr<CSyncSource*>& sources );
     void fireSyncNotification( CSyncSource* psrc, boolean bFinish, int nErrCode, String strMessage);
+
+    void setInitialSyncNotification(String strUrl, String strParams );//throws Exception
+    void fireInitialSyncNotification( boolean bFinish, int nErrCode );
+    void clearInitialSyncNotification();
 
     void cleanLastSyncObjectCount();
     int incLastSyncObjectCount(int nSrcID);

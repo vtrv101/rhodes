@@ -289,6 +289,56 @@ void CDBAdapter::destroy_table(String strTable)
     open( dbOldName, m_strDbVer, false );
 }
 
+void CDBAdapter::setInitialSyncDB(String fDataName)
+{
+    CDBAdapter db;
+    db.open( fDataName, m_strDbVer, true );
+
+    db.startTransaction();
+
+    //copy client_info
+	{
+		DBResult( res, executeSQL("SELECT * from client_info") );
+		String strInsert = "";
+		int rc = 0;
+	    for ( ; !res.isEnd(); res.next() )
+	    {
+	    	sqlite3_stmt* stInsert = createInsertStatement(res, "client_info", db, strInsert);
+
+            if (stInsert)
+            {
+                rc = sqlite3_step(stInsert);
+                checkDbError(rc);
+                sqlite3_finalize(stInsert);
+            }
+	    }
+	}
+    //copy sources
+	{
+		DBResult( res, executeSQL("SELECT name, should_sync,priority from sources") );
+	    for ( ; !res.isEnd(); res.next() )
+	    {
+	    	String strName = res.getStringByIdx(0);
+	    	
+            db.executeSQL("UPDATE sources SET should_sync=?,priority=? where name=?", 
+                res.getStringByIdx(1), res.getIntByIdx(2), strName ); 
+	    }
+	}
+
+    db.endTransaction();
+    db.close();
+
+    String dbOldName = m_strDbPath;
+    close();
+
+    CRhoFile::deleteFilesInFolder(RHODESAPP().getBlobsDirPath().c_str());
+
+    CRhoFile::deleteFile(dbOldName.c_str());
+    CRhoFile::renameFile(fDataName.c_str(),dbOldName.c_str());
+    open( dbOldName, m_strDbVer, false );
+}
+
+/*
 static const char* g_szDbSchema = 
     "CREATE TABLE client_info ("
     " client_id VARCHAR(255) PRIMARY KEY,"
@@ -298,25 +348,29 @@ static const char* g_szDbSchema =
     " port VARCHAR(10) default NULL,"
     " last_sync_success VARCHAR(100) default NULL);"
     "CREATE TABLE object_values ("
+    " id INTEGER PRIMARY KEY,"
     " source_id int default NULL,"
     " attrib varchar(255) default NULL,"
     " object varchar(255) default NULL,"
     " value text default NULL,"
     " attrib_type varchar(255) default NULL);"
     "CREATE TABLE changed_values ("
+    " id INTEGER PRIMARY KEY,"
     " source_id int default NULL,"
     " attrib varchar(255) default NULL,"
     " object varchar(255) default NULL,"
     " value text default NULL,"
     " attrib_type varchar(255) default NULL,"
     " update_type varchar(255) default NULL,"
-    " sent int default 0);"
+    " sent int default 0,"
+    " main_id INTEGER default 0);"
     "CREATE TABLE sources ("
-    " source_id int PRIMARY KEY,"
+    //" id INTEGER PRIMARY KEY,"
+    " source_url VARCHAR(255) PRIMARY KEY,"
+    " source_id int,"
     " name VARCHAR(255) default NULL,"
     " token INTEGER default NULL,"
     " priority INTEGER,"
-    " should_sync INTEGER,"
     " session VARCHAR(255) default NULL,"
     " last_updated int default 0,"
     " last_inserted_size int default 0,"
@@ -342,11 +396,29 @@ static const char* g_szDbSchema =
             "SELECT rhoOnInsertObjectRecord( NEW.source_id, NEW.attrib );"
         "END;"
     ";";
+*/
 
 void CDBAdapter::createSchema()
 {
     char* errmsg = 0;
-    int rc = sqlite3_exec(m_dbHandle, g_szDbSchema,  NULL, NULL, &errmsg);
+    CFilePath oPath(m_strDbPath);
+
+    String strSqlScript, strSqlTriggers;
+    CRhoFile::loadTextFile(oPath.changeBaseName("syncdb.schema").c_str(), strSqlScript);
+    CRhoFile::loadTextFile(oPath.changeBaseName("syncdb.triggers").c_str(), strSqlTriggers);
+
+    if ( strSqlScript.length() == 0 )
+    {
+        LOG(ERROR)+"createSchema failed. Cannot read schema file: " + strSqlScript;
+        return;
+    }
+    if ( strSqlTriggers.length() == 0 )
+    {
+        LOG(ERROR)+"createSchema failed. Cannot read triggers file: " + strSqlTriggers;
+        return;
+    }
+
+    int rc = sqlite3_exec(m_dbHandle, (strSqlScript+strSqlTriggers).c_str(),  NULL, NULL, &errmsg);
 
     if ( rc != SQLITE_OK )
         LOG(ERROR)+"createSchema failed. Error code: " + rc + ";Message: " + (errmsg ? errmsg : "");

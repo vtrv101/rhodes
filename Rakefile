@@ -182,6 +182,9 @@ namespace "build" do
           end
         end
       end
+      
+      cp_r File.join(startdir, "res/build-tools/db"), File.join($srcdir, 'apps')
+      
       chdir startdir
       
       #create manifest
