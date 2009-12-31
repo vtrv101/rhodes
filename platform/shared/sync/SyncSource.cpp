@@ -280,10 +280,11 @@ void CSyncSource::makePushBody_Ver3(String& strBody, const String& strUpdateType
                 strBody += ",";
             }
 
+            bFirst = true;
             strBody += "\"" + strObject + "\"";
             strCurObject = strObject;
         }
-
+            
         if (!bFirst)
             strBody += ",";
 

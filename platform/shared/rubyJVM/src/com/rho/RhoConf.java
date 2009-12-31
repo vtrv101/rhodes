@@ -186,31 +186,40 @@ public class RhoConf {
     	loadFromFile();
     	loadFromJad();
     }
-    
-    private void loadFromJar()
+
+    public String loadFileFromJar(String path)
     {
 		java.io.InputStream fstream = null;
+		String strFile = "";		
 		try {
 			fstream = RhoClassFactory.createFile().getResourceAsStream(getClass(),
-				 "/" + CONF_FILENAME);
+				 "/" + path);
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
 		
 		if ( fstream == null )
-			return;
+			return strFile;
 		 
 		try{
 			byte[] data = new byte[fstream.available()];
 			int len = fstream.read(data);
 			if ( len == 0 )
-				return;
+				return strFile;
 			
-			String strSettings = new String(data,0,len);
-			loadFromString(strSettings);
+			strFile = new String(data,0,len);
 		}catch(java.io.IOException exc){
-			 
 		}
+		
+		try{fstream.close();}catch(java.io.IOException exc){}
+		
+		return strFile;
+    }
+    
+    private void loadFromJar()
+    {
+    	String strSettings = loadFileFromJar(CONF_FILENAME);
+		loadFromString(strSettings);
    }
     
    void loadFromJad()
@@ -230,7 +239,7 @@ public class RhoConf {
 		}
    }
    
-   public static boolean sendLog()throws Exception
+   public static boolean sendLog()
    {
 		com.rho.net.NetRequest nq = RhoClassFactory.createNetRequest();
 		String strDevicePin = "";
@@ -258,8 +267,15 @@ public class RhoConf {
 		String strQuery = strLogUrl + "client_log?" +
 		    "client_id=" + strClientID + "&device_pin=" + strDevicePin + "&log_name=" + RhoConf.getInstance().getString("logname");
 		
-		NetResponse resp = nq.pushFile(strQuery, RhoLogger.getLogConf().getLogFilePath(), com.rho.sync.SyncThread.getSyncEngine() );
-		if ( !resp.isOK() )
+		NetResponse resp = null;
+		try{
+			resp = nq.pushFile(strQuery, RhoLogger.getLogConf().getLogFilePath(), com.rho.sync.SyncThread.getSyncEngine() );
+		}catch(Exception exc)
+		{
+			LOG.ERROR("send_log failed.", exc);
+		}
+		
+		if ( resp == null || !resp.isOK() )
 		{
 			LOG.ERROR("send_log failed : network error");
 			return false;

@@ -145,6 +145,8 @@ public class DBAdapter extends RubyBasic {
 		return strDbName;
 	}
     
+	public String getDBPath(){ return getNameNoExt(m_strDBPath); }
+	
     private void initFilePaths(String strDBName)throws Exception
     {
     	if ( strDBName.charAt(0) == '/' || strDBName.charAt(0) == '\\' )
@@ -163,9 +165,10 @@ public class DBAdapter extends RubyBasic {
     	m_strDBVerPath = strPath + getNameNoExt(strDBName.substring(nSlash+1)) +  ".version";
     }
     
-    private String getSqlScript(){
-    	//TODO: read script from jar
-		return "CREATE TABLE client_info ("+
+    private String getSqlScript()
+    {
+    	return RhoConf.getInstance().loadFileFromJar("apps/db/syncdb.schema");
+/*		return "CREATE TABLE client_info ("+
 		"client_id VARCHAR(255) PRIMARY KEY,"+
 		"token VARCHAR(255) default NULL,"+
 		"token_sent int default 0,"+
@@ -202,6 +205,7 @@ public class DBAdapter extends RubyBasic {
 		"last_deleted_size int default 0,"+
 		"last_sync_duration int default 0,"+
 		"last_sync_success int default 0," +
+		"backend_refresh_time int default 0," +
 		"source_attribs varchar default NULL);"+
 		//"CREATE INDEX by_attrib_obj_utype on object_values (attrib,object,update_type);"+
 		//"CREATE INDEX by_attrib_utype on object_values (attrib,update_type);"+
@@ -213,6 +217,7 @@ public class DBAdapter extends RubyBasic {
 		//"CREATE INDEX by_src_object ON object_values (source_id, object);"+
 		//"CREATE INDEX by_src_up_value ON object_values (source_id, update_type, value);";
 		//"CREATE INDEX by_type ON object_values (attrib_type)";
+		 */
     }
 
     /*private String getSqlScript(){
@@ -421,6 +426,7 @@ public class DBAdapter extends RubyBasic {
 		    String dbNewNameScript = dbNewName + ".script";
 		    String dbNameJournal = dbName + ".journal";
 		    String dbNewNameJournal = dbNewName + ".journal";
+		    String dbNewNameProps = dbNewName + ".properties";
 		    
 			//LOG.TRACE("DBAdapter: " + dbNewNameDate + ": " + (fs.exists(dbNewNameData) ? "" : "not ") + "exists");
 		    fs.delete(dbNewNameData);
@@ -428,6 +434,7 @@ public class DBAdapter extends RubyBasic {
 		    fs.delete(dbNewNameScript);
 		    //LOG.TRACE("DBAdapter: " + dbNewNameJournal + ": " + (fs.exists(dbNewNameJournal) ? "" : "not ") + "exists");
 		    fs.delete(dbNewNameJournal);
+		    fs.delete(dbNewNameProps);
 		    
 		    LOG.TRACE("1. Size of " + dbNameData + ": " + fs.size(dbNameData));
 		    
@@ -465,6 +472,7 @@ public class DBAdapter extends RubyBasic {
 		    
 		    LOG.TRACE("2. Size of " + dbNewNameData + ": " + fs.size(dbNewNameData));
 		    
+		    fs.delete(dbNewNameProps);
 		    fs.delete(dbNameJournal);
 		    
 			String fName = makeBlobFolderName();
@@ -519,6 +527,101 @@ public class DBAdapter extends RubyBasic {
     	m_bInsideTransaction=false;
     	
     	Unlock();
+    }
+    
+    public void setInitialSyncDB(String fDbName, String fScriptName)
+    {
+		IDBStorage db = null;
+		try{
+		    db = RhoClassFactory.createDBStorage();	    
+			db.open( fDbName, "" );
+
+		    db.startTransaction();
+			
+		    //copy client_info
+			{
+				IDBResult res = executeSQL("SELECT * from client_info", null);
+				String strInsert = "";
+				
+			    for ( ; !res.isEnd(); res.next() )
+			    {
+			    	if ( strInsert.length() == 0 )
+			    		strInsert = createInsertStatement(res, "client_info");
+			    	
+			    	db.executeSQL(strInsert, res.getCurData(), false );
+			    }
+			}
+		    //copy sources
+			{
+				IDBResult res = executeSQL("SELECT name, source_url,priority,session from sources", null);
+			    for ( ; !res.isEnd(); res.next() )
+			    {
+			    	String strName = res.getStringByIdx(0);
+			    	Object[] values = {res.getStringByIdx(1), new Integer(res.getIntByIdx(2)),res.getStringByIdx(3),strName};
+			    	
+		            db.executeSQL("UPDATE sources SET source_url=?,priority=?,session=? where name=?",values, false); 
+			    }
+			}
+			
+		    db.commit();
+		    db.close();
+
+		    m_dbStorage.close();
+		    m_dbStorage = null;
+		    m_bIsOpen = false;
+
+			String dbName = getNameNoExt(m_strDBPath);
+			IFileAccess fs = RhoClassFactory.createFileAccess();
+			
+			String dbNameData = dbName + ".data";
+		    String dbNameScript = dbName + ".script";
+		    String dbNameJournal = dbName + ".journal";
+		    String dbNewNameProps = getNameNoExt(fDbName) + ".properties";
+		    
+		    fs.delete(dbNameJournal);
+		    fs.delete(dbNewNameProps);
+		    
+			String fName = makeBlobFolderName();
+			RhoClassFactory.createFile().delete(fName);
+			DBAdapter.makeBlobFolderName(); //Create folder back
+		    
+		    fs.renameOverwrite(fDbName, dbNameData);
+		    fs.renameOverwrite(fScriptName, dbNameScript);
+		    
+		    m_dbStorage = RhoClassFactory.createDBStorage();
+			m_dbStorage.open(m_strDBPath, getSqlScript() );
+			m_bIsOpen = true;
+			
+			getAttrMgr().load(this);
+			
+			m_dbStorage.setDbCallback(new DBCallback(this));
+			
+		}catch(Exception e)
+		{
+    		LOG.ERROR("execute failed.", e);
+    		
+			if ( !m_bIsOpen )
+			{
+				LOG.ERROR("destroy_table error.Try to open old DB.");
+				try{
+					m_dbStorage.open(m_strDBPath, getSqlScript() );
+					m_bIsOpen = true;
+				}catch(Exception exc)
+				{
+					LOG.ERROR("destroy_table open old table failed.", exc);
+				}
+			}
+			
+			try {
+				if ( db != null)
+					db.close();
+			} catch (DBException e1) {
+				LOG.ERROR("closing of DB caused exception: " + e1.getMessage());
+			}
+    		
+			throw (e instanceof RubyException ? (RubyException)e : new RubyException(e.getMessage()));
+		}
+    	
     }
 /*    
     public RubyValue rb_execute(RubyValue v) 

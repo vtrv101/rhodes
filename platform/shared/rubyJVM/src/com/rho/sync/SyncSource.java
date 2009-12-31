@@ -61,7 +61,7 @@ class SyncSource
     Integer  m_nID;
     String m_strName;
     String m_strUrl;
-    String m_token;
+    long m_token = 0;
     boolean m_bTokenFromDB; 
     
     int m_nCurPageCount, m_nInserted, m_nDeleted, m_nTotalCount, m_nAttribCounter=0;
@@ -78,22 +78,19 @@ class SyncSource
     Vector/*Ptr<CSyncBlob*>*/ m_arSyncBlobs = new Vector();
     
     String m_strAskParams = "";
-
+    int m_nRefreshTime = 0;
+    
     String getUrl() { return m_strUrl; }
     Integer getID() { return m_nID; }
     String getName() { return m_strName; }
     int getServerObjectsCount(){ return m_nInserted+m_nDeleted; }
     boolean isSearch(){ return m_strParams.length() > 0;}
     
-    String getToken(){ return m_token; }
-    void setToken(String token){ m_token = token; m_bTokenFromDB = false; }
+    long getToken(){ return m_token; }
+    void setToken(long token){ m_token = token; m_bTokenFromDB = false; }
     boolean isEmptyToken()
     {
-        return m_token == null || m_token.length() == 0 || m_token.equals("0");
-    }
-    boolean isTokenMoreThanOne()
-    {
-    	return m_token != null && m_token.length() > 0 && !m_token.equals("1")&& !m_token.equals("0"); 
+    	return m_token == 0;
     }
     void setAskParams(String ask){ m_strAskParams = ask;}
     String getAskParams(){ return m_strAskParams;}
@@ -112,8 +109,9 @@ class SyncSource
     SyncNotify getNotify(){ return getSync().getNotify(); }
 	DBAdapter getDB(){ return getSync().getDB(); }
 	NetRequest getNet(){ return getSync().getNet(); }
-
-    SyncSource(int id, String strUrl, String name, String token, SyncEngine syncEngine )
+	void setRefreshTime( int nRefreshTime ){ m_nRefreshTime = nRefreshTime;}
+	
+    SyncSource(int id, String strUrl, String name, long token, SyncEngine syncEngine )
     {
     	m_syncEngine = syncEngine;
         m_nID = new Integer(id);
@@ -133,7 +131,6 @@ class SyncSource
         m_nID = new Integer(0);
         m_strUrl = "";
         m_strName = "";
-        m_token = "";
         m_bTokenFromDB = true;
         
         m_nCurPageCount = 0;
@@ -150,19 +147,23 @@ class SyncSource
 	    try{
 	    	PROF.START("Pull");
 	        if ( isEmptyToken() )
-	            processToken("1");
+	            processToken(1);
 	    	
 	        boolean bSyncedServer = false;
 	        if ( m_strParams.length() == 0 || m_bSearchSyncChanges )
 	        {
 	            if ( isPendingClientChanges() )
 	            {
+	            	LOG.INFO("Client has unconfirmed items in database. Sync server first.");
 	                syncServerChanges();
 	                bSyncedServer = true;
 	            }
 
 	            if ( bSyncedServer && isPendingClientChanges() )
+	            {
+	            	LOG.INFO("Client still has unconfirmed items in database. Sync is stopped.");
 	                getSync().setState(SyncEngine.esStop);
+	            }
 	            else
 	            {
 	                boolean bSyncClient = false;
@@ -190,9 +191,9 @@ class SyncSource
 	    }finally{
 		   TimeInterval endTime = TimeInterval.getCurrentTime();
 		    getDB().executeSQL("UPDATE sources set last_updated=?,last_inserted_size=?,last_deleted_size=?, "+
-								 "last_sync_duration=?,last_sync_success=? WHERE source_id=?", 
+								 "last_sync_duration=?,last_sync_success=?, backend_refresh_time=? WHERE source_id=?", 
 		                         new Long(endTime.toULong()/1000), new Integer(getInsertedCount()), new Integer(getDeletedCount()), new Long((endTime.minus(startTime)).toULong()), 
-		                         new Integer(m_bGetAtLeastOnePage?1:0), getID() );
+		                         new Integer(m_bGetAtLeastOnePage?1:0), new Integer(m_nRefreshTime), getID() );
 	    }
 	}
 
@@ -392,7 +393,7 @@ class SyncSource
 	            strQuery += "&question=" + getAskParams();
 	        }
 	
-	        if ( !m_bTokenFromDB && isTokenMoreThanOne() )
+	        if ( !m_bTokenFromDB && getToken() > 1 )
 	            strQuery += "&ack_token=" + getToken();
 	
 			LOG.INFO( "Pull changes from server. Url: " + (strUrl+strQuery) );
@@ -400,7 +401,7 @@ class SyncSource
 			NetResponse resp = null;
 			try{
 			    PROF.START("Net");	    
-				resp = getNet().pullData(strUrl+strQuery, "", getSync());
+				resp = getNet().pullData(strUrl+strQuery, getSync());
 				PROF.STOP("Net");
 				
 		        if ( !resp.isOK() )
@@ -474,6 +475,12 @@ class SyncSource
 	        oJsonArr.next();
 	    }
 	    
+	    if ( !oJsonArr.isEnd() && oJsonArr.getCurItem().hasName("rt") )
+	    {
+	        setRefreshTime(oJsonArr.getCurItem().getInt("rt"));
+	        oJsonArr.next();
+	    }
+	    
 	    if ( !oJsonArr.isEnd() && oJsonArr.getCurItem().hasName("total_count") )
 	    {
 	        setTotalCount(oJsonArr.getCurItem().getInt("total_count"));
@@ -492,7 +499,7 @@ class SyncSource
 	    	//oo conflicts
 	    	getDB().executeSQL("DELETE FROM changed_values where source_id=? and sent>=3", getID() );
 	    	//
-	        processToken("0");
+	        processToken(0);
 	    }
 	    
 		LOG.INFO( "Got " + getCurPageCount() + "(Processed: " +  getServerObjectsCount() + ") records of " + getTotalCount() + " from server. Source: " + getName()
@@ -773,9 +780,9 @@ class SyncSource
         return true;
 	}
 	
-	void processToken(String token)throws DBException
+	void processToken(long token)throws DBException
 	{
-	    if ( this.isTokenMoreThanOne() && getToken().equals(token) ){
+		if ( token > 1 && getToken() == token ){
 			//Delete non-confirmed records
 	    	
 	        setToken( token ); //For m_bTokenFromDB = false;
@@ -784,7 +791,7 @@ class SyncSource
 		}else
 	    {
 	        setToken( token );
-	        getDB().executeSQL("UPDATE sources SET token=? where source_id=?", token, getID() );
+	        getDB().executeSQL("UPDATE sources SET token=? where source_id=?", new Long(token), getID() );
 		}
 	
 	}
