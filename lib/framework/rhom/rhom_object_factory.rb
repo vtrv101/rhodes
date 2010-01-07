@@ -588,7 +588,7 @@ module Rhom
                       ::Rhom::RhomDbAdapter.start_transaction
                 
                       #save list of attrs
-                      attrsList = ::Rhom::RhomDbAdapter.select_from_table('object_values', 'attrib', {"object"=>obj}) 
+                      attrsList = ::Rhom::RhomDbAdapter.select_from_table('object_values', '*', {"object"=>obj}) 
                       
                       # first delete the record from viewable list
                       result = ::Rhom::RhomDbAdapter.delete_from_table('object_values', {"object"=>obj})
@@ -603,7 +603,9 @@ module Rhom
                       if update_type and attrsList
                         # now add delete operation
                         attrsList.each do |attrName|
-                            ::Rhom::RhomDbAdapter.insert_into_table('changed_values', {"source_id"=>self.get_inst_source_id, "object"=>obj, "attrib"=>attrName['attrib'], "update_type"=>update_type})
+                            ::Rhom::RhomDbAdapter.insert_into_table('changed_values', 
+                              {"source_id"=>self.get_inst_source_id, "object"=>obj, 
+                                "attrib"=>attrName['attrib'], "value"=>attrName['value'], "update_type"=>update_type})
                         end    
                       end
                       

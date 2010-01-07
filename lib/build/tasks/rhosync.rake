@@ -13,10 +13,15 @@ namespace "rhosync" do
     $token = File.read($token_file) if File.exist?($token_file)
   end
   
+  desc "Flush the rhosync database (you will need to run rhosync:get_api_token afterwards)"
+  task :flushdb => :config do
+    $agent.post("#{$url}/api/flushdb",:api_token => $token)
+  end
+  
   desc "Fetches current api token from rhosync"
   task :get_api_token => :config do
-    login = ask "Login: "
-    password = ask "Password: "
+    login = ask "admin login: "
+    password = ask "admin password: "
     $agent.post("#{$url}/login", :login => login, :password => password)
     $token = $agent.post("#{$url}/api/get_api_token").body
     File.open($token_file,'w') {|f| f.write $token}
@@ -34,6 +39,10 @@ namespace "rhosync" do
     print_resp(nil)
   end
   
+  desc "Clean rhosync, import application and create new user"
+  task :clean_start => [:flushdb, :get_api_token, :import_app, :create_user] do
+  end
+  
   desc "Deletes an application from rhosync"
   task :delete_app => :config do
     post("/api/delete_app", :app_name => $appname, :api_token => $token)
@@ -41,8 +50,8 @@ namespace "rhosync" do
   
   desc "Creates and subscribes user for application in rhosync"
   task :create_user => :config do
-    login = ask "login: "
-    password = ask "password: "
+    login = ask "new user login: "
+    password = ask "new user password: "
     post("/api/create_user", {:app_name => $appname, :api_token => $token,
       :attributes => {:login => login, :password => password}})
   end
@@ -60,6 +69,18 @@ namespace "rhosync" do
   task :list_apps => :config do
     post("/api/list_apps", :api_token => $token)
   end
+  
+  desc "Run rhosync source adapter specs"
+  task :spec do
+    files = File.join($app_basedir,'rhosync/spec/sources/*_spec.rb')
+    puts "files: #{files.inspect}"
+    Spec::Rake::SpecTask.new('rhosync:spec') do |t|
+      t.spec_files = FileList[files]
+      t.spec_opts = %w(-fs --color)
+      t.rcov = true
+      t.rcov_opts = ['--exclude', 'spec/*,gems/*']
+    end
+  end
 end
 
 def post(path,params)
@@ -74,7 +95,7 @@ def print_resp(resp,success=true)
   else
     puts "=> FAILED"
   end
-  puts resp.body if resp and resp.body and resp.body.length > 0
+  puts "=> " + resp.body if resp and resp.body and resp.body.length > 0
 end
 
 def archive(path)
