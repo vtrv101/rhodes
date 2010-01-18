@@ -71,7 +71,7 @@ ISyncProtocol& CSyncSource::getProtocol(){ return getSync().getProtocol(); }
 
 void CSyncSource::sync()
 {
-    getNotify().fireSyncNotification(this, false, RhoRuby.ERR_NONE, RhoRuby.getMessageText("syncronizing") + getName() + "...");
+    getNotify().fireSyncNotification(null, false, RhoRuby.ERR_NONE, RhoRuby.getMessageText("syncronizing") + getName() + "...");
 
     CTimeInterval startTime = CTimeInterval::getCurrentTime();
     m_bIsSearch = false;
@@ -346,7 +346,7 @@ void CSyncSource::syncServerChanges()
 
         processServerResponse_ver3(oJsonArr);
 
-        if ( getCurPageCount() == 0 )
+        if ( getToken() == 0 )
             break;
     }
 }
@@ -356,7 +356,6 @@ void CSyncSource::processServerResponse_ver3(CJSONArrayIterator& oJsonArr)
     PROF_START("Data1");
 
     int nVersion = 0;
-    boolean bNoToken = true;
     if ( !oJsonArr.isEnd() && oJsonArr.getCurItem().hasName("version") )
     {
         nVersion = oJsonArr.getCurItem().getInt("version");
@@ -382,7 +381,6 @@ void CSyncSource::processServerResponse_ver3(CJSONArrayIterator& oJsonArr)
     {
         processToken(oJsonArr.getCurItem().getUInt64("token"));
         oJsonArr.next();
-        bNoToken = false;
     }
 
     if ( !oJsonArr.isEnd() && oJsonArr.getCurItem().hasName("count") )
@@ -418,17 +416,15 @@ void CSyncSource::processServerResponse_ver3(CJSONArrayIterator& oJsonArr)
         return;
     }*/
 
-    if ( getServerObjectsCount() == 0 )
-        getNotify().fireSyncNotification(this, false, RhoRuby.ERR_NONE, "");
+    //if ( getServerObjectsCount() == 0 )
+    //    getNotify().fireSyncNotification(this, false, RhoRuby.ERR_NONE, "");
 
-    if ( getCurPageCount() == 0 )
+    if ( getToken() == 0 )
     {
         //oo conflicts
         getDB().executeSQL("DELETE FROM changed_values where source_id=? and sent>=3", getID() );
         //
 
-        if ( bNoToken )
-            processToken(0);
     }
 
 	LOG(INFO) + "Got " + getCurPageCount() + "(Processed: " +  getServerObjectsCount() + ") records of " + getTotalCount() + " from server. Source: " + getName()
@@ -522,9 +518,9 @@ void CSyncSource::processServerCmd_Ver3(const String& strCmd, const String& strO
     }else if ( strCmd.compare("links") == 0 )
     {
         getDB().executeSQL("UPDATE object_values SET object=? where object=? and source_id=?", strValue, strObject, getID() );
-        getDB().executeSQL("UPDATE changed_values SET object=? where object=? and source_id=?", strValue, strObject, getID() );
+        getDB().executeSQL("UPDATE changed_values SET object=?,sent=3 where object=? and source_id=?", strValue, strObject, getID() );
 
-        getNotify().onObjectChanged(getID(), strValue, CSyncNotify::enCreate);
+        getNotify().onObjectChanged(getID(), strObject, CSyncNotify::enCreate);
     }
 
 }
