@@ -486,7 +486,7 @@ module Rhom
                     
                   #set_notification(args[:callback], args[:callback_param]) if args[:callback]
                   src_ar = [self.name.to_s]
-                  SyncEngine.dosearch_source(src_ar, args[:from] ? args[:from] : 'search',
+                  SyncEngine.dosearch(src_ar, args[:from] ? args[:from] : 'search',
                     searchParams, args[:sync_changes] ? args[:sync_changes] : false, args[:progress_step] ? args[:progress_step] : -1,
                     args[:callback], callbackParams )
                 end
