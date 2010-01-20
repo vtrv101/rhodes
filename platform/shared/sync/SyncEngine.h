@@ -109,7 +109,7 @@ public:
     String loadClientID();
     String requestClientIDByNet();
     boolean resetClientIDByNet(const String& strClientID);//throws Exception
-    void doInitialSync(String strClientID);//throws Exception
+    void doBulkSync(String strClientID, int nBulkSyncState);//throws Exception
 
     db::CDBAdapter& getDB(){ return m_dbUserAdapter; }
     db::CDBAdapter& getAppDB(){ return m_dbAppAdapter; }
@@ -127,6 +127,8 @@ private:
     CSyncSource* findSource(const CSourceID& oSrcID);
 
     void callLoginCallback(String callback, int nErrCode, String strMessage);
+
+    void loadBulkDB(db::CDBAdapter& db, const String& strDataUrl, const String& strQuery);
 
     void initProtocol();
 

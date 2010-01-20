@@ -340,12 +340,12 @@ JNIEXPORT jstring JNICALL Java_com_rhomobile_rhodes_Rhodes_getCurrentUrl
 JNIEXPORT void JNICALL Java_com_rhomobile_rhodes_Rhodes_dblock
   (JNIEnv *, jobject)
 {
-    rho::sync::CSyncThread::getDBAdapter().executeSQL("begin immediate");
+    //rho::sync::CSyncThread::getDBAdapter().executeSQL("begin immediate");
 }
 
 JNIEXPORT void JNICALL Java_com_rhomobile_rhodes_Rhodes_dbunlock
   (JNIEnv *, jobject)
 {
-    rho::sync::CSyncThread::getDBAdapter().executeSQL("rollback");
+    //rho::sync::CSyncThread::getDBAdapter().executeSQL("rollback");
 }
 

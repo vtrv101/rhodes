@@ -306,7 +306,7 @@ void CSyncEngine::loadAllSources()
     for ( ; !res.isEnd(); res.next() )
     { 
         String strShouldSync = res.getStringByIdx(1);
-        if ( strShouldSync.compare("none") == 0 )
+        if ( strShouldSync.compare("none") == 0 || strShouldSync.compare("bulkonly") == 0 )
             continue;
 
         String strName = res.getStringByIdx(3);
@@ -322,14 +322,14 @@ String CSyncEngine::loadClientID()
     synchronized(m_mxLoadClientID)
     {
         boolean bResetClient = false;
-        int nInitialSyncState = 0;
+        int nBulkSyncState = 0;
         {
-            DBResult( res, getDB().executeSQL("SELECT client_id,reset,initialsync_state from client_info limit 1") );
+            DBResult( res, getDB().executeSQL("SELECT client_id,reset,bulksync_state from client_info limit 1") );
             if ( !res.isEnd() )
             {
                 clientID = res.getStringByIdx(0);
                 bResetClient = res.getIntByIdx(1) > 0;
-                nInitialSyncState = res.getIntByIdx(2);
+                nBulkSyncState = res.getIntByIdx(2);
             }
         }
 
@@ -350,9 +350,8 @@ String CSyncEngine::loadClientID()
     	    else
     		    getDB().executeSQL("UPDATE client_info SET reset=? where client_id=?", 0, clientID );	    	
         }
-//TODO: doInitialSync
-//        if ( nInitialSyncState == 0 && isContinueSync() )
-//        	doInitialSync(clientID);
+
+       	doBulkSync(clientID, nBulkSyncState);
     }
     return clientID;
 }
@@ -379,68 +378,84 @@ String CSyncEngine::requestClientIDByNet()
     return "";
 }
 
-void CSyncEngine::doInitialSync(String strClientID)//throws Exception
+void CSyncEngine::doBulkSync(String strClientID, int nBulkSyncState)//throws Exception
 {
-	LOG(INFO) + "Initial sync: start";
-	getNotify().fireInitialSyncNotification(false, RhoRuby.ERR_NONE);
+    //TODO:doBulkSync
+    //if ( nBulkSyncState >= 2 || !isContinueSync() )
+        return;
+
+	LOG(INFO) + "Bulk sync: start";
+	getNotify().fireBulkSyncNotification(false, RhoRuby.ERR_NONE);
 
     String serverUrl = RHOCONF().getPath("syncserver");
-    String strUrl = serverUrl + "initialsync";
+    String strUrl = serverUrl + "bulksync";
     String strQuery = "?client_id=" + strClientID;
-    String strDataUrl = "";
-/*
+    String strUserDataUrl = "", strAppDataUrl = "";
+
     {	    
         NetResponse( resp, getNet().pullData(strUrl+strQuery, this) );
         if ( !resp.isOK() )
         {
-    	    LOG(ERROR) + "Initial sync failed: server return an error.";
+    	    LOG(ERROR) + "Bulk sync failed: server return an error.";
     	    stopSync();
-    	    getNotify().fireInitialSyncNotification(true, RhoRuby.ERR_REMOTESERVER);
+    	    getNotify().fireBulkSyncNotification(true, RhoRuby.ERR_REMOTESERVER);
     	    return;
         }
-        //TODO: check is server return no initial sync
+        //TODO: check is server return no bulk sync
         if ( resp.getCharData() != null )
         {
-		    LOG(INFO) + "Initial sync: got response from server: " + resp.getCharData();
+		    LOG(INFO) + "Bulk sync: got response from server: " + resp.getCharData();
         	
             const char* szData = resp.getCharData();
             CJSONEntry oJsonEntry(szData);
 
-            CJSONEntry oJsonObject = oJsonEntry.getEntry("initialsync");
+            CJSONEntry oJsonObject = oJsonEntry.getEntry("bulksync");
             if ( !oJsonObject.isEmpty() )
             {
-        	    strDataUrl = oJsonObject.getString("data");
+        	    strUserDataUrl = oJsonObject.getString("user_data");
+                strAppDataUrl = oJsonObject.getString("app_data");
             }
         }
-        if ( strDataUrl.length() == 0 )
+        if ( strUserDataUrl.length() == 0 && strAppDataUrl.length() == 0)
         {
-    	    LOG(ERROR) + "Initial sync failed: server return incorrect response.";
-    	    stopSync();
-    	    getNotify().fireInitialSyncNotification(true, RhoRuby.ERR_REMOTESERVER);
+    	    LOG(INFO) + "Bulk sync return no data.";
     	    return;
         }
-    }*/
+    }
 
-    String fDataName =  getDB().getDBPath() + "_initial";
-    /*{
-	    LOG(INFO) + "Initial sync: download data from server: " + strDataUrl;
-        NetResponse( resp1, getNet().pullFile(strDataUrl+strQuery, fDataName, this) );
-        if ( !resp1.isOK() )
-        {
-    	    LOG(ERROR) + "Initial sync failed: cannot download database file.";
-    	    stopSync();
-    	    getNotify().fireInitialSyncNotification(true, RhoRuby.ERR_REMOTESERVER);
-    	    return;
-        }
-    } */
+    if ( nBulkSyncState == 0 )
+        loadBulkDB(getDB(), strUserDataUrl, strQuery);
+    if ( !isContinueSync() )
+        return;
 
-	LOG(INFO) + "Initial sync: change db";
+	getDB().executeSQL("UPDATE client_info SET bulksync_state=? where client_id=?", 1, strClientID );	    	
+
+    loadBulkDB(getAppDB(), strAppDataUrl, strQuery);
+    if ( !isContinueSync() )
+        return;
+
+	getDB().executeSQL("UPDATE client_info SET bulksync_state=? where client_id=?", 2, strClientID );	    	
+
+    getNotify().fireBulkSyncNotification(true, RhoRuby.ERR_NONE);        
+}
+
+void CSyncEngine::loadBulkDB(db::CDBAdapter& db, const String& strDataUrl, const String& strQuery)
+{
+    String fDataName =  db.getDBPath() + "_bulk";
+
+    LOG(INFO) + "Bulk sync: download data from server: " + strDataUrl;
+    NetResponse( resp1, getNet().pullFile(strDataUrl+strQuery, fDataName, this) );
+    if ( !resp1.isOK() )
+    {
+	    LOG(ERROR) + "Bulk sync failed: cannot download database file.";
+	    stopSync();
+	    getNotify().fireBulkSyncNotification(true, RhoRuby.ERR_REMOTESERVER);
+	    return;
+    }
+
+	LOG(INFO) + "Bulk sync: change db";
     
-    getDB().setInitialSyncDB(fDataName);
-    
-	getDB().executeSQL("UPDATE client_info SET initialsync_state=? where client_id=?", 1, strClientID );	    	
-    
-    getNotify().fireInitialSyncNotification(true, RhoRuby.ERR_NONE);        
+    db.setBulkSyncDB(fDataName);
 }
 
 int CSyncEngine::getStartSource()

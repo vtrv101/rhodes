@@ -197,7 +197,7 @@ public:
     void endTransaction();
     void rollback();
     void destroy_table(String strTable);
-    void setInitialSyncDB(String fDataName);
+    void setBulkSyncDB(String fDataName);
 
 //private:
     DBResultPtr executeStatement(common::CAutoPtr<CDBResult>& res);

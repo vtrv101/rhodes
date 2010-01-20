@@ -153,8 +153,8 @@ void rho_sync_addobjectnotify(int nSrcID, const char* szObject);
 void rho_sync_cleanobjectnotify();
 int rho_sync_get_pagesize();
 void rho_sync_set_pagesize(int nPageSize);
-void rho_sync_set_initial_notification(const char *url, char* params);
-void rho_sync_clear_initial_notification();
+void rho_sync_set_bulk_notification(const char *url, char* params);
+void rho_sync_clear_bulk_notification();
 
 unsigned long rho_sync_get_attrs(const char* szPartition, int nSrcID);
 int rho_sync_get_lastsync_objectcount(int nSrcID);

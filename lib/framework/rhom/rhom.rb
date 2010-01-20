@@ -44,7 +44,7 @@ module Rhom
         SyncEngine.stop_sync
         
         ::Rho::RHO.get_user_db().execute_sql("UPDATE client_info SET reset=1")
-        ::Rho::RHO.get_user_db().execute_sql("UPDATE client_info SET initialsync_state=0")
+        ::Rho::RHO.get_user_db().execute_sql("UPDATE client_info SET bulksync_state=0")
         ::Rho::RHO.get_user_db().execute_sql("UPDATE sources SET token=0")
         
         ::Rho::RHO.get_user_db().delete_all_from_table('changed_values')

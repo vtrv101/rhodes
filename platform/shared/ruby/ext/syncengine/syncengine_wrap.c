@@ -1587,10 +1587,10 @@ static VALUE mSyncEngine;
     extern void  rho_sync_set_pagesize(int pagesize);
     #define set_pagesize rho_sync_set_pagesize
 
-	extern void rho_sync_set_initial_notification(const char *url, char* params);
-	#define set_initial_notification rho_sync_set_initial_notification
-	extern void rho_sync_clear_initial_notification();
-	#define clear_initial_notification rho_sync_clear_initial_notification
+	extern void rho_sync_set_bulk_notification(const char *url, char* params);
+	#define set_bulk_notification rho_sync_set_bulk_notification
+	extern void rho_sync_clear_bulk_notification();
+	#define clear_bulk_notification rho_sync_clear_bulk_notification
 	
 	#if !defined(bool)
 	#define bool int
@@ -2235,7 +2235,7 @@ fail:
 
 
 SWIGINTERN VALUE
-_wrap_set_initial_notification(int argc, VALUE *argv, VALUE self) {
+_wrap_set_bulk_notification(int argc, VALUE *argv, VALUE self) {
   char *arg1 = (char *) 0 ;
   char *arg2 = (char *) 0 ;
   int res1 ;
@@ -2250,15 +2250,15 @@ _wrap_set_initial_notification(int argc, VALUE *argv, VALUE self) {
   }
   res1 = SWIG_AsCharPtrAndSize(argv[0], &buf1, NULL, &alloc1);
   if (!SWIG_IsOK(res1)) {
-    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "set_initial_notification" "', argument " "1"" of type '" "char const *""'");
+    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "set_bulk_notification" "', argument " "1"" of type '" "char const *""'");
   }
   arg1 = (char *)(buf1);
   res2 = SWIG_AsCharPtrAndSize(argv[1], &buf2, NULL, &alloc2);
   if (!SWIG_IsOK(res2)) {
-    SWIG_exception_fail(SWIG_ArgError(res2), "in method '" "set_initial_notification" "', argument " "2"" of type '" "char *""'");
+    SWIG_exception_fail(SWIG_ArgError(res2), "in method '" "set_bulk_notification" "', argument " "2"" of type '" "char *""'");
   }
   arg2 = (char *)(buf2);
-  set_initial_notification((char const *)arg1,arg2);
+  set_bulk_notification((char const *)arg1,arg2);
   if (alloc1 == SWIG_NEWOBJ) free((char*)buf1);
   if (alloc2 == SWIG_NEWOBJ) free((char*)buf2);
   return Qnil;
@@ -2270,11 +2270,11 @@ fail:
 
 
 SWIGINTERN VALUE
-_wrap_clear_initial_notification(int argc, VALUE *argv, VALUE self) {
+_wrap_clear_bulk_notification(int argc, VALUE *argv, VALUE self) {
   if ((argc < 0) || (argc > 0)) {
     rb_raise(rb_eArgError, "wrong # of arguments(%d for 0)",argc); SWIG_fail;
   }
-  clear_initial_notification();
+  clear_bulk_notification();
   return Qnil;
 fail:
   return Qnil;
@@ -2561,7 +2561,7 @@ SWIGEXPORT void Init_SyncEngine(void) {
   rb_define_module_function(mSyncEngine, "get_lastsync_objectcount", _wrap_get_lastsync_objectcount, -1);
   rb_define_module_function(mSyncEngine, "get_pagesize", _wrap_get_pagesize, -1);
   rb_define_module_function(mSyncEngine, "set_pagesize", _wrap_set_pagesize, -1);
-  rb_define_module_function(mSyncEngine, "set_initial_notification", _wrap_set_initial_notification, -1);
-  rb_define_module_function(mSyncEngine, "clear_initial_notification", _wrap_clear_initial_notification, -1);
+  rb_define_module_function(mSyncEngine, "set_bulk_notification", _wrap_set_bulk_notification, -1);
+  rb_define_module_function(mSyncEngine, "clear_bulk_notification", _wrap_clear_bulk_notification, -1);
 }
 

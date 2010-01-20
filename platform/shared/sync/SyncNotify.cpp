@@ -271,11 +271,11 @@ void CSyncNotify::setSearchNotification(String strUrl, String strParams )
     }
 }
 
-void CSyncNotify::setInitialSyncNotification(String strUrl, String strParams )//throws Exception
+void CSyncNotify::setBulkSyncNotification(String strUrl, String strParams )//throws Exception
 {
     String strFullUrl = getNet().resolveUrl(strUrl);
 	
-	m_initialSyncNotify = CSyncNotification( strFullUrl, strParams, true );
+	m_bulkSyncNotify = CSyncNotification( strFullUrl, strParams, true );
 }
 
 void CSyncNotify::reportSyncStatus(String status, int error, String strDetails) {
@@ -297,7 +297,7 @@ void CSyncNotify::fireAllSyncNotifications( boolean bFinish, int nErrCode, Strin
     }
 }
 
-void CSyncNotify::fireInitialSyncNotification( boolean bFinish, int nErrCode )
+void CSyncNotify::fireBulkSyncNotification( boolean bFinish, int nErrCode )
 {
     if ( getSync().getState() == CSyncEngine::esExit )
 		return;
@@ -305,7 +305,7 @@ void CSyncNotify::fireInitialSyncNotification( boolean bFinish, int nErrCode )
 	//TODO: show report
 	if( nErrCode != RhoRuby.ERR_NONE)
 	{
-		String strMessage = RhoRuby.getMessageText("sync_failed_for") + "initial.";
+		String strMessage = RhoRuby.getMessageText("sync_failed_for") + "bulk.";
 		reportSyncStatus(strMessage,nErrCode,"");
 	}
 	
@@ -313,10 +313,10 @@ void CSyncNotify::fireInitialSyncNotification( boolean bFinish, int nErrCode )
     String strBody = "", strUrl;
 	synchronized(m_mxSyncNotifications)
 	{
-        if ( m_initialSyncNotify.m_strUrl.length() == 0 )
+        if ( m_bulkSyncNotify.m_strUrl.length() == 0 )
             return;
         
-        strUrl = m_initialSyncNotify.m_strUrl;
+        strUrl = m_bulkSyncNotify.m_strUrl;
         strBody = "rho_callback=1";
         strBody += "&status=";
         if ( bFinish )
@@ -335,16 +335,16 @@ void CSyncNotify::fireInitialSyncNotification( boolean bFinish, int nErrCode )
         else
         	strBody += "in_progress";
         
-        if ( m_initialSyncNotify.m_strParams.length() > 0 )
-            strBody += "&" + m_initialSyncNotify.m_strParams;
+        if ( m_bulkSyncNotify.m_strParams.length() > 0 )
+            strBody += "&" + m_bulkSyncNotify.m_strParams;
         
-        bRemoveAfterFire = bRemoveAfterFire && m_initialSyncNotify.m_bRemoveAfterFire;
+        bRemoveAfterFire = bRemoveAfterFire && m_bulkSyncNotify.m_bRemoveAfterFire;
 	}
 	
     if ( bRemoveAfterFire )
-    	clearInitialSyncNotification();
+    	clearBulkSyncNotification();
     
-	LOG(INFO) +  "Fire initial notification.Url :" + strUrl + "; Body: " + strBody;
+	LOG(INFO) +  "Fire Bulk notification.Url :" + strUrl + "; Body: " + strBody;
 	
     NetResponse( resp, getNet().pushData( strUrl, strBody, null ) );
     if ( !resp.isOK() )
@@ -354,7 +354,7 @@ void CSyncNotify::fireInitialSyncNotification( boolean bFinish, int nErrCode )
         const char* szData = resp.getCharData();
         if ( szData && strcmp(szData,"stop") == 0)
         {
-        	clearInitialSyncNotification();
+        	clearBulkSyncNotification();
         }
     }
 }
@@ -482,12 +482,12 @@ void CSyncNotify::clearSyncNotification(int source_id)
     }
 }
 
-void CSyncNotify::clearInitialSyncNotification() 
+void CSyncNotify::clearBulkSyncNotification() 
 {
-	LOG(INFO) + "Clear initial notification.";
+	LOG(INFO) + "Clear bulk notification.";
 	
 	synchronized(m_mxSyncNotifications){
-		m_initialSyncNotify = CSyncNotification();
+		m_bulkSyncNotify = CSyncNotification();
 	}
 }
 

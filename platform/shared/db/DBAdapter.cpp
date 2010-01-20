@@ -289,7 +289,7 @@ void CDBAdapter::destroy_table(String strTable)
     open( dbOldName, m_strDbVer, false );
 }
 
-void CDBAdapter::setInitialSyncDB(String fDataName)
+void CDBAdapter::setBulkSyncDB(String fDataName)
 {
     CDBAdapter db;
     db.open( fDataName, m_strDbVer, true );

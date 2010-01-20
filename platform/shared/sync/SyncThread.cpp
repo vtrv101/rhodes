@@ -312,14 +312,14 @@ void rho_sync_clear_notification(int source_id)
     return CSyncThread::getSyncEngine().getNotify().clearSyncNotification(source_id);
 }
 
-void rho_sync_set_initial_notification(const char *url, char* params)
+void rho_sync_set_bulk_notification(const char *url, char* params)
 {
-    return CSyncThread::getSyncEngine().getNotify().setInitialSyncNotification(url, params ? params : "");
+    return CSyncThread::getSyncEngine().getNotify().setBulkSyncNotification(url, params ? params : "");
 }
 
-void rho_sync_clear_initial_notification()
+void rho_sync_clear_bulk_notification()
 {
-    return CSyncThread::getSyncEngine().getNotify().clearInitialSyncNotification();
+    return CSyncThread::getSyncEngine().getNotify().clearBulkSyncNotification();
 }
 
 int rho_sync_openDB(const char* szDBPath, void** ppDB)

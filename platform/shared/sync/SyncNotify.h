@@ -47,7 +47,7 @@ private:
 
     HashtablePtr<int,CSyncNotification*> m_mapSyncNotifications;
     common::CAutoPtr<CSyncNotification> m_pSearchNotification;
-	CSyncNotification m_initialSyncNotify;
+	CSyncNotification m_bulkSyncNotify;
     common::CMutex m_mxSyncNotifications;
 
     net::INetRequest& getNet();
@@ -78,9 +78,9 @@ public:
     void onSyncSourceEnd( int nSrc, VectorPtr<CSyncSource*>& sources );
     void fireSyncNotification( CSyncSource* psrc, boolean bFinish, int nErrCode, String strMessage);
 
-    void setInitialSyncNotification(String strUrl, String strParams );//throws Exception
-    void fireInitialSyncNotification( boolean bFinish, int nErrCode );
-    void clearInitialSyncNotification();
+    void setBulkSyncNotification(String strUrl, String strParams );//throws Exception
+    void fireBulkSyncNotification( boolean bFinish, int nErrCode );
+    void clearBulkSyncNotification();
 
     void cleanLastSyncObjectCount();
     int incLastSyncObjectCount(int nSrcID);
