@@ -1,3 +1,0 @@
-app/Question/config
-app/Case/config
-app/Account/config

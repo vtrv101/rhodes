@@ -63,6 +63,8 @@ private:
     CSyncNotify m_oSyncNotify;
     boolean m_bStopByUser;
     int m_nSyncPageSize;
+    boolean m_bHasUserPartition;
+    boolean m_bHasAppPartition;
 
 public:
     CSyncEngine(db::CDBAdapter& dbUser, db::CDBAdapter& dbApp);
@@ -128,7 +130,7 @@ private:
 
     void callLoginCallback(String callback, int nErrCode, String strMessage);
 
-    void loadBulkDB(db::CDBAdapter& db, const String& strDataUrl, const String& strQuery);
+    void loadBulkPartition(db::CDBAdapter& dbPartition, const String& strPartition, const String& strClientID );
 
     void initProtocol();
 

@@ -1,5 +1,6 @@
 #include "SyncEngine.h"
 #include "SyncSource.h"
+#include "SyncThread.h"
 
 #include "json/JSONIterator.h"
 #include "common/RhoConf.h"
@@ -301,6 +302,8 @@ CSyncSource* CSyncEngine::findSourceByName(const String& strSrcName)
 void CSyncEngine::loadAllSources()
 {
     m_sources.clear();
+    m_bHasUserPartition = false;
+    m_bHasAppPartition = false;
 
     DBResult( res, getDB().executeSQL("SELECT source_id,sync_type,token,name, partition from sources ORDER BY priority") );
     for ( ; !res.isEnd(); res.next() )
@@ -311,6 +314,9 @@ void CSyncEngine::loadAllSources()
 
         String strName = res.getStringByIdx(3);
         String strPartition = res.getStringByIdx(4);
+        m_bHasUserPartition = m_bHasUserPartition || strPartition.compare("user") == 0;
+        m_bHasAppPartition = m_bHasAppPartition || strPartition.compare("app") == 0;
+
         m_sources.addElement( new CSyncSource( res.getIntByIdx(0), strName, res.getUInt64ByIdx(2), 
             (strPartition.compare("user") == 0 ? getDB() : getAppDB()), *this) );
     }
@@ -381,70 +387,81 @@ String CSyncEngine::requestClientIDByNet()
 void CSyncEngine::doBulkSync(String strClientID, int nBulkSyncState)//throws Exception
 {
     //TODO:doBulkSync
-    //if ( nBulkSyncState >= 2 || !isContinueSync() )
+    if ( nBulkSyncState >= 2 || !isContinueSync() )
         return;
 
 	LOG(INFO) + "Bulk sync: start";
 	getNotify().fireBulkSyncNotification(false, RhoRuby.ERR_NONE);
 
-    String serverUrl = RHOCONF().getPath("syncserver");
-    String strUrl = serverUrl + "bulksync";
-    String strQuery = "?client_id=" + strClientID;
-    String strUserDataUrl = "", strAppDataUrl = "";
+    if ( nBulkSyncState == 0 && m_bHasUserPartition )
+    {
+        loadBulkPartition(getDB(), "user", strClientID);
 
+        if ( !isContinueSync() )
+            return;
+
+	    getDB().executeSQL("UPDATE client_info SET bulksync_state=? where client_id=?", 1, strClientID );	    	
+    }
+
+    if ( m_bHasAppPartition )
+        loadBulkPartition(getAppDB(), "app", strClientID);
+
+    if ( !isContinueSync() )
+        return;
+
+    getDB().executeSQL("UPDATE client_info SET bulksync_state=? where client_id=?", 2, strClientID );
+
+    getNotify().fireBulkSyncNotification(true, RhoRuby.ERR_NONE);        
+}
+
+void CSyncEngine::loadBulkPartition(db::CDBAdapter& dbPartition, const String& strPartition, const String& strClientID )
+{
+    String serverUrl = RHOCONF().getPath("syncserver");
+    String strUrl = serverUrl + "bulk_data";
+    String strQuery = "?client_id=" + strClientID + "&partition=" + strPartition;
+    String strDataUrl = "", strCmd = "";
+
+    while(strCmd.length() == 0)
     {	    
         NetResponse( resp, getNet().pullData(strUrl+strQuery, this) );
-        if ( !resp.isOK() )
+        if ( !resp.isOK() || resp.getCharData() == null )
         {
     	    LOG(ERROR) + "Bulk sync failed: server return an error.";
     	    stopSync();
     	    getNotify().fireBulkSyncNotification(true, RhoRuby.ERR_REMOTESERVER);
     	    return;
         }
-        //TODO: check is server return no bulk sync
-        if ( resp.getCharData() != null )
-        {
-		    LOG(INFO) + "Bulk sync: got response from server: " + resp.getCharData();
-        	
-            const char* szData = resp.getCharData();
-            CJSONEntry oJsonEntry(szData);
 
-            CJSONEntry oJsonObject = oJsonEntry.getEntry("bulksync");
-            if ( !oJsonObject.isEmpty() )
-            {
-        	    strUserDataUrl = oJsonObject.getString("user_data");
-                strAppDataUrl = oJsonObject.getString("app_data");
-            }
-        }
-        if ( strUserDataUrl.length() == 0 && strAppDataUrl.length() == 0)
+	    LOG(INFO) + "Bulk sync: got response from server: " + resp.getCharData();
+    	
+        const char* szData = resp.getCharData();
+        CJSONEntry oJsonEntry(szData);
+        strCmd = oJsonEntry.getString("result");
+        if ( oJsonEntry.hasName("url") )
+   	        strDataUrl = oJsonEntry.getString("url");
+        
+        if ( strCmd.compare("wait") == 0)
         {
-    	    LOG(INFO) + "Bulk sync return no data.";
-    	    return;
+            int nTimeout = RHOCONF().getInt("bulksync_timeout_sec");
+            if ( nTimeout == 0 )
+                nTimeout = 10;
+
+            CSyncThread::getInstance()->sleep(nTimeout*1000);
+            strCmd = "";
         }
     }
 
-    if ( nBulkSyncState == 0 )
-        loadBulkDB(getDB(), strUserDataUrl, strQuery);
-    if ( !isContinueSync() )
-        return;
+    //TODO: check is server return no bulk sync
+    if ( strCmd.compare("nop") == 0)
+    {
+	    LOG(INFO) + "Bulk sync return no data.";
+	    return;
+    }
 
-	getDB().executeSQL("UPDATE client_info SET bulksync_state=? where client_id=?", 1, strClientID );	    	
-
-    loadBulkDB(getAppDB(), strAppDataUrl, strQuery);
-    if ( !isContinueSync() )
-        return;
-
-	getDB().executeSQL("UPDATE client_info SET bulksync_state=? where client_id=?", 2, strClientID );	    	
-
-    getNotify().fireBulkSyncNotification(true, RhoRuby.ERR_NONE);        
-}
-
-void CSyncEngine::loadBulkDB(db::CDBAdapter& db, const String& strDataUrl, const String& strQuery)
-{
-    String fDataName =  db.getDBPath() + "_bulk";
+    String fDataName = dbPartition.getDBPath() + "_bulk";
 
     LOG(INFO) + "Bulk sync: download data from server: " + strDataUrl;
-    NetResponse( resp1, getNet().pullFile(strDataUrl+strQuery, fDataName, this) );
+    NetResponse( resp1, getNet().pullFile(strDataUrl, fDataName, this) );
     if ( !resp1.isOK() )
     {
 	    LOG(ERROR) + "Bulk sync failed: cannot download database file.";
@@ -455,7 +472,7 @@ void CSyncEngine::loadBulkDB(db::CDBAdapter& db, const String& strDataUrl, const
 
 	LOG(INFO) + "Bulk sync: change db";
     
-    db.setBulkSyncDB(fDataName);
+    dbPartition.setBulkSyncDB(fDataName);
 }
 
 int CSyncEngine::getStartSource()
