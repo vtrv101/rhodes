@@ -1552,10 +1552,6 @@ static VALUE mSyncEngine;
 	extern void rho_sync_doSyncSource(VALUE source_id,int show_status_popup);
 	#define dosearch rho_sync_doSearch
 	extern void rho_sync_doSearch(VALUE ar_sources, const char *from, const char *params, int sync_changes, int nProgressStep, const char* callback, const char* callback_params);
-	extern void rho_sync_lock();
-	#define lock_sync_mutex rho_sync_lock
-	extern void rho_sync_unlock();
-	#define unlock_sync_mutex rho_sync_unlock
 	extern void rho_sync_login(const char *login, const char *password, const char* callback);
 	#define login rho_sync_login
 	extern int rho_sync_logged_in();
@@ -1572,7 +1568,7 @@ static VALUE mSyncEngine;
 	#define set_pollinterval rho_sync_set_pollinterval
 	extern void rho_sync_set_syncserver(char* syncserver);
 	#define set_syncserver rho_sync_set_syncserver
-	extern VALUE rho_sync_get_attrs(int source_id);
+	extern VALUE rho_sync_get_attrs(const char* szPartition, int source_id);
 	#define get_src_attrs rho_sync_get_attrs
 	
     extern void  rho_sync_setobjectnotify_url(const char* szUrl);
@@ -1880,30 +1876,6 @@ fail:
 
 
 SWIGINTERN VALUE
-_wrap_lock_sync_mutex(int argc, VALUE *argv, VALUE self) {
-  if ((argc < 0) || (argc > 0)) {
-    rb_raise(rb_eArgError, "wrong # of arguments(%d for 0)",argc); SWIG_fail;
-  }
-  lock_sync_mutex();
-  return Qnil;
-fail:
-  return Qnil;
-}
-
-
-SWIGINTERN VALUE
-_wrap_unlock_sync_mutex(int argc, VALUE *argv, VALUE self) {
-  if ((argc < 0) || (argc > 0)) {
-    rb_raise(rb_eArgError, "wrong # of arguments(%d for 0)",argc); SWIG_fail;
-  }
-  unlock_sync_mutex();
-  return Qnil;
-fail:
-  return Qnil;
-}
-
-
-SWIGINTERN VALUE
 _wrap_login(int argc, VALUE *argv, VALUE self) {
   char *arg1 = (char *) 0 ;
   char *arg2 = (char *) 0 ;
@@ -2100,24 +2072,35 @@ fail:
 
 SWIGINTERN VALUE
 _wrap_get_src_attrs(int argc, VALUE *argv, VALUE self) {
-  int arg1 ;
+  char *arg1 = (char *) 0 ;
+  int arg2 ;
   VALUE result;
-  int val1 ;
-  int ecode1 = 0 ;
+  int res1 ;
+  char *buf1 = 0 ;
+  int alloc1 = 0 ;
+  int val2 ;
+  int ecode2 = 0 ;
   VALUE vresult = Qnil;
   
-  if ((argc < 1) || (argc > 1)) {
-    rb_raise(rb_eArgError, "wrong # of arguments(%d for 1)",argc); SWIG_fail;
+  if ((argc < 2) || (argc > 2)) {
+    rb_raise(rb_eArgError, "wrong # of arguments(%d for 2)",argc); SWIG_fail;
   }
-  ecode1 = SWIG_AsVal_int(argv[0], &val1);
-  if (!SWIG_IsOK(ecode1)) {
-    SWIG_exception_fail(SWIG_ArgError(ecode1), "in method '" "get_src_attrs" "', argument " "1"" of type '" "int""'");
+  res1 = SWIG_AsCharPtrAndSize(argv[0], &buf1, NULL, &alloc1);
+  if (!SWIG_IsOK(res1)) {
+    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "get_src_attrs" "', argument " "1"" of type '" "char const *""'");
+  }
+  arg1 = (char *)(buf1);
+  ecode2 = SWIG_AsVal_int(argv[1], &val2);
+  if (!SWIG_IsOK(ecode2)) {
+    SWIG_exception_fail(SWIG_ArgError(ecode2), "in method '" "get_src_attrs" "', argument " "2"" of type '" "int""'");
   } 
-  arg1 = (int)(val1);
-  result = (VALUE)get_src_attrs(arg1);
+  arg2 = (int)(val2);
+  result = (VALUE)get_src_attrs((char const *)arg1,arg2);
   vresult = result;
+  if (alloc1 == SWIG_NEWOBJ) free((char*)buf1);
   return vresult;
 fail:
+  if (alloc1 == SWIG_NEWOBJ) free((char*)buf1);
   return Qnil;
 }
 
@@ -2563,8 +2546,6 @@ SWIGEXPORT void Init_SyncEngine(void) {
   rb_define_module_function(mSyncEngine, "dosync", _wrap_dosync, -1);
   rb_define_module_function(mSyncEngine, "dosync_source", _wrap_dosync_source, -1);
   rb_define_module_function(mSyncEngine, "dosearch", _wrap_dosearch, -1);
-  rb_define_module_function(mSyncEngine, "lock_sync_mutex", _wrap_lock_sync_mutex, -1);
-  rb_define_module_function(mSyncEngine, "unlock_sync_mutex", _wrap_unlock_sync_mutex, -1);
   rb_define_module_function(mSyncEngine, "login", _wrap_login, -1);
   rb_define_module_function(mSyncEngine, "logged_in", _wrap_logged_in, -1);
   rb_define_module_function(mSyncEngine, "logout", _wrap_logout, -1);

@@ -32,7 +32,7 @@ void SyncBlob_DeleteCallback(sqlite3_context* dbContext, int nArgs, sqlite3_valu
         CRhoFile::deleteFile(strFilePath.c_str());
     }
 
-    sync::CSyncThread::getDBAdapter().getAttrMgr().remove( sqlite3_value_int(*(ppArgs+2)), (char*)sqlite3_value_text(*(ppArgs+3)) );
+    sync::CSyncThread::getDBAdapter(sqlite3_context_db_handle(dbContext)).getAttrMgr().remove( sqlite3_value_int(*(ppArgs+2)), (char*)sqlite3_value_text(*(ppArgs+3)) );
 }
 
 void SyncBlob_InsertCallback(sqlite3_context* dbContext, int nArgs, sqlite3_value** ppArgs)
@@ -40,7 +40,7 @@ void SyncBlob_InsertCallback(sqlite3_context* dbContext, int nArgs, sqlite3_valu
     if ( nArgs < 2 )
         return;
 
-    sync::CSyncThread::getDBAdapter().getAttrMgr().add( sqlite3_value_int(*(ppArgs)), (char*)sqlite3_value_text(*(ppArgs+1)) );
+    sync::CSyncThread::getDBAdapter(sqlite3_context_db_handle(dbContext)).getAttrMgr().add( sqlite3_value_int(*(ppArgs)), (char*)sqlite3_value_text(*(ppArgs+1)) );
 }
 
 boolean CDBAdapter::checkDbError(int rc)
@@ -315,13 +315,13 @@ void CDBAdapter::setInitialSyncDB(String fDataName)
 	}
     //copy sources
 	{
-		DBResult( res, executeSQL("SELECT name, should_sync,priority from sources") );
+		DBResult( res, executeSQL("SELECT name, sync_type, partition, priority from sources") );
 	    for ( ; !res.isEnd(); res.next() )
 	    {
 	    	String strName = res.getStringByIdx(0);
 	    	
-            db.executeSQL("UPDATE sources SET should_sync=?,priority=? where name=?", 
-                res.getStringByIdx(1), res.getIntByIdx(2), strName ); 
+            db.executeSQL("UPDATE sources SET sync_type=?, partition=?, priority=? where name=?", 
+                res.getStringByIdx(1), res.getIntByIdx(2), res.getIntByIdx(3), strName ); 
 	    }
 	}
 

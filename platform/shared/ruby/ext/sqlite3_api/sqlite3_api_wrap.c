@@ -8,33 +8,36 @@
 static VALUE mSqlite3;
 static VALUE mDatabase;
 
-extern int rho_sync_openDB(const char* szDBPath);
-extern int rho_sync_closeDB();
-extern int rho_db_startUITransaction();
-extern int rho_db_commitUITransaction();
-extern int rho_db_rollbackUITransaction();
-extern int rho_db_destroy_table(const char* szTableName);
-extern void* rho_db_get_handle();
+extern int rho_sync_openDB(const char* szDBPath, void** ppDB);
+//extern int rho_sync_closeDB();
+extern int rho_db_startUITransaction(void* pDB);
+extern int rho_db_commitUITransaction(void* pDB);
+extern int rho_db_rollbackUITransaction(void* pDB);
+extern int rho_db_destroy_table(void* pDB, const char* szTableName);
+extern void* rho_db_get_handle(void* pDB);
+extern void rho_db_lock(void* pDB);
+extern void rho_db_unlock(void* pDB);
 
 static VALUE db_allocate(VALUE klass)
 {
 	//sqlite3 **db = malloc(sizeof(sqlite3 **));
-	return Data_Wrap_Struct(klass, 0, 0, 0);
+    void* pDB = malloc(sizeof(void*));
+	return Data_Wrap_Struct(klass, 0, 0, pDB);
 }
 
 static VALUE db_init(int argc, VALUE *argv, VALUE self)
 {
 	const char *szDbName = NULL;
-	sqlite3 **ppDB = NULL;
+	void **ppDB = NULL;
 	int result;
 	
 	if ((argc < 1) || (argc > 1))
 		rb_raise(rb_eArgError, "wrong # of arguments(%d for 1)",argc);
 	
-	Data_Get_Struct(self, sqlite3 *, ppDB);
+	Data_Get_Struct(self, void *, ppDB);
 	szDbName = STR2CSTR(argv[0]);
 	
-	result = (int)rho_sync_openDB(szDbName);//sqlite3_open(szDbName,ppDB);
+	result = (int)rho_sync_openDB(szDbName, ppDB);//sqlite3_open(szDbName,ppDB);
 	if ( result != SQLITE_OK )
 		rb_raise(rb_eArgError, "could open database:%d",result);
 	
@@ -43,13 +46,13 @@ static VALUE db_init(int argc, VALUE *argv, VALUE self)
 
 static VALUE db_close(int argc, VALUE *argv, VALUE self){
 	//sqlite3 * db = NULL;
-	sqlite3 **ppDB = NULL;		
+	void **ppDB = NULL;		
 	int rc = 0;
 	
 	if (argc > 0)
 		rb_raise(rb_eArgError, "wrong # of arguments(%d for 0)",argc);
 	
-	Data_Get_Struct(self, sqlite3 *, ppDB);
+	Data_Get_Struct(self, void *, ppDB);
 	
     //do not close sync db, close it at exit
 	rc = 0;//rho_sync_closeDB();//sqlite3_close(db);
@@ -59,45 +62,75 @@ static VALUE db_close(int argc, VALUE *argv, VALUE self){
 
 static VALUE db_start_transaction(int argc, VALUE *argv, VALUE self){
 	//sqlite3 * db = NULL;
-	sqlite3 **ppDB = NULL;		
+	void **ppDB = NULL;		
 	int rc = 0;
 	
 	if (argc > 0)
 		rb_raise(rb_eArgError, "wrong # of arguments(%d for 0)",argc);
 	
-	Data_Get_Struct(self, sqlite3 *, ppDB);
+	Data_Get_Struct(self, void *, ppDB);
 	
-	rc = rho_db_startUITransaction();
+	rc = rho_db_startUITransaction(*ppDB);
 	
 	return INT2NUM(rc);
 }
 
 static VALUE db_commit(int argc, VALUE *argv, VALUE self){
 	//sqlite3 * db = NULL;
-	sqlite3 **ppDB = NULL;		
+	void **ppDB = NULL;		
 	int rc = 0;
 	
 	if (argc > 0)
 		rb_raise(rb_eArgError, "wrong # of arguments(%d for 0)",argc);
 	
-	Data_Get_Struct(self, sqlite3 *, ppDB);
+	Data_Get_Struct(self, void *, ppDB);
 	
-	rc = rho_db_commitUITransaction();
+	rc = rho_db_commitUITransaction(*ppDB);
 	
 	return INT2NUM(rc);
 }
 
 static VALUE db_rollback(int argc, VALUE *argv, VALUE self){
 	//sqlite3 * db = NULL;
-	sqlite3 **ppDB = NULL;		
+	void **ppDB = NULL;		
 	int rc = 0;
 	
 	if (argc > 0)
 		rb_raise(rb_eArgError, "wrong # of arguments(%d for 0)",argc);
 	
-	Data_Get_Struct(self, sqlite3 *, ppDB);
+	Data_Get_Struct(self, void *, ppDB);
 	
-	rc = rho_db_rollbackUITransaction();
+	rc = rho_db_rollbackUITransaction(*ppDB);
+	
+	return INT2NUM(rc);
+}
+
+static VALUE db_lock(int argc, VALUE *argv, VALUE self){
+	//sqlite3 * db = NULL;
+	void **ppDB = NULL;		
+	int rc = 0;
+	
+	if (argc > 0)
+		rb_raise(rb_eArgError, "wrong # of arguments(%d for 0)",argc);
+	
+	Data_Get_Struct(self, void *, ppDB);
+	
+	rho_db_lock(*ppDB);
+	
+	return INT2NUM(rc);
+}
+
+static VALUE db_unlock(int argc, VALUE *argv, VALUE self){
+	//sqlite3 * db = NULL;
+	void **ppDB = NULL;		
+	int rc = 0;
+	
+	if (argc > 0)
+		rb_raise(rb_eArgError, "wrong # of arguments(%d for 0)",argc);
+	
+	Data_Get_Struct(self, void *, ppDB);
+	
+	rho_db_unlock(*ppDB);
 	
 	return INT2NUM(rc);
 }
@@ -119,17 +152,17 @@ static VALUE* getColNames(sqlite3_stmt* statement, int nCount)
 static VALUE db_destroy_table(int argc, VALUE *argv, VALUE self)
 {
 	//sqlite3 * db = NULL;
-	sqlite3 **ppDB = NULL;		
+	void **ppDB = NULL;		
     const char* szTableName = NULL;
     int rc = 0;
 
 	if ((argc < 1) || (argc > 1))
 		rb_raise(rb_eArgError, "wrong # of arguments(%d for 1)",argc);
 
-	Data_Get_Struct(self, sqlite3 *, ppDB);
+	Data_Get_Struct(self, void *, ppDB);
 	szTableName = RSTRING_PTR(argv[0]);
 
-    rc = rho_db_destroy_table(szTableName);
+    rc = rho_db_destroy_table(*ppDB, szTableName);
 
     return INT2NUM(rc);
 }
@@ -137,7 +170,7 @@ static VALUE db_destroy_table(int argc, VALUE *argv, VALUE self)
 static VALUE db_execute(int argc, VALUE *argv, VALUE self)
 {
 	sqlite3 * db = NULL;
-	sqlite3 **ppDB = NULL;		
+	void **ppDB = NULL;		
 	sqlite3_stmt *statement = NULL;
 	const char* sql = NULL;
 	VALUE arRes = rb_ary_new();
@@ -148,8 +181,8 @@ static VALUE db_execute(int argc, VALUE *argv, VALUE self)
 	if ((argc < 1) || (argc > 2))
 		rb_raise(rb_eArgError, "wrong # of arguments(%d for 2)",argc);
 	
-	Data_Get_Struct(self, sqlite3 *, ppDB);
-	db = (sqlite3 *)rho_db_get_handle();
+	Data_Get_Struct(self, void *, ppDB);
+	db = (sqlite3 *)rho_db_get_handle(*ppDB);
 	sql = RSTRING_PTR(argv[0]);
 	
     RAWTRACE1("db_execute: %s", sql);
@@ -254,6 +287,8 @@ void Init_sqlite3_api(void)
 	rb_define_method(mDatabase, "commit", db_commit, -1);	
     rb_define_method(mDatabase, "rollback", db_rollback, -1);	
     rb_define_method(mDatabase, "destroy_table", db_destroy_table, -1);	
+    rb_define_method(mDatabase, "lock_db", db_lock, -1);	
+    rb_define_method(mDatabase, "unlock_db", db_unlock, -1);	
 }
 
 #if 0

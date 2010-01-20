@@ -17,7 +17,7 @@ using namespace rho::net;
 using namespace rho::db;
 using namespace rho::common;
 using namespace rho::json;
-
+/*
 CSyncSource::CSyncSource() : m_syncEngine( *new CSyncEngine(*new db::CDBAdapter()))
 {
     m_bTokenFromDB = true;
@@ -32,8 +32,8 @@ CSyncSource::CSyncSource() : m_syncEngine( *new CSyncEngine(*new db::CDBAdapter(
 
     m_bIsSearch = false;
 }
-
-CSyncSource::CSyncSource(CSyncEngine& syncEngine ) : m_syncEngine(syncEngine)
+*/
+CSyncSource::CSyncSource(CSyncEngine& syncEngine, db::CDBAdapter& db  ) : m_syncEngine(syncEngine), m_dbAdapter(db)
 {
     m_bTokenFromDB = true;
 
@@ -47,7 +47,7 @@ CSyncSource::CSyncSource(CSyncEngine& syncEngine ) : m_syncEngine(syncEngine)
     m_bIsSearch = false;
 }
 
-CSyncSource::CSyncSource(int id, const String& strName, uint64 token, CSyncEngine& syncEngine ) : m_syncEngine(syncEngine)
+CSyncSource::CSyncSource(int id, const String& strName, uint64 token, db::CDBAdapter& db, CSyncEngine& syncEngine ) : m_syncEngine(syncEngine), m_dbAdapter(db)
 {
     m_nID = id;
     m_strName = strName;
@@ -64,7 +64,6 @@ CSyncSource::CSyncSource(int id, const String& strName, uint64 token, CSyncEngin
     m_bIsSearch = false;
 }
 
-CDBAdapter& CSyncSource::getDB(){ return getSync().getDB(); }
 INetRequest& CSyncSource::getNet(){ return getSync().getNet(); }
 CSyncNotify& CSyncSource::getNotify(){ return getSync().getNotify(); }
 ISyncProtocol& CSyncSource::getProtocol(){ return getSync().getProtocol(); }

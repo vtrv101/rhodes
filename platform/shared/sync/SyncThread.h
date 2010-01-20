@@ -90,7 +90,9 @@ public:
 private:
     static CSyncThread* m_pInstance;
 
-    static db::CDBAdapter  m_oDBAdapter;
+    static db::CDBAdapter  m_oDBUserAdapter;
+    static db::CDBAdapter  m_oDBAppAdapter;
+
     CSyncEngine     m_oSyncEngine;
     common::CAutoPtr<common::IRhoClassFactory> m_ptrFactory;
 	int           m_nPollInterval;
@@ -103,7 +105,12 @@ public:
     static void Destroy();
     static CSyncThread* getInstance(){ return m_pInstance; }
     static CSyncEngine& getSyncEngine(){ return m_pInstance->m_oSyncEngine; }
-    static db::CDBAdapter& getDBAdapter(){ return m_pInstance->m_oDBAdapter; }
+
+    static db::CDBAdapter& getDBUserAdapter(){ return m_oDBUserAdapter; }
+    static db::CDBAdapter& getDBAppAdapter(){ return m_oDBAppAdapter; }
+
+    static db::CDBAdapter& getDBAdapter(const char* szPartition=0){ return szPartition && strcmp(szPartition,"user") != 0 ? m_oDBAppAdapter : m_oDBUserAdapter; }
+    static db::CDBAdapter& getDBAdapter(sqlite3* db);
 
     void addSyncCommand(CSyncCommand* pSyncCmd);
 
@@ -134,8 +141,6 @@ void rho_sync_doSyncAllSources(int show_status_popup);
 void rho_sync_doSyncSource(unsigned long nSrcID,int show_status_popup);
 void rho_sync_doSearch(unsigned long ar_sources, const char *from, const char *params, bool sync_changes, int nProgressStep, const char* callback, const char* callback_params);
 void rho_sync_doSyncSourceByUrl(const char* szSrcID);
-void rho_sync_lock();
-void rho_sync_unlock();
 void rho_sync_login(const char *login, const char *password, const char* callback);
 int rho_sync_logged_in();
 void rho_sync_logout();
@@ -151,15 +156,7 @@ void rho_sync_set_pagesize(int nPageSize);
 void rho_sync_set_initial_notification(const char *url, char* params);
 void rho_sync_clear_initial_notification();
 
-//struct sqlite3;
-int rho_sync_openDB(const char* szDBPath);
-int rho_sync_closeDB();
-int rho_db_startUITransaction();
-int rho_db_commitUITransaction();
-int rho_db_rollbackUITransaction();
-int rho_db_destroy_table(const char* szTableName);
-void* rho_db_get_handle();
-unsigned long rho_sync_get_attrs(int nSrcID);
+unsigned long rho_sync_get_attrs(const char* szPartition, int nSrcID);
 int rho_sync_get_lastsync_objectcount(int nSrcID);
 
 #ifdef __cplusplus

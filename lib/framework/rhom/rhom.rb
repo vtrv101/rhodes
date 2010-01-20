@@ -36,26 +36,22 @@ module Rhom
     
     class << Rhom
       def client_id
-        c_id = ::Rhom::RhomDbAdapter.select_from_table('client_info','client_id')[0]
+        c_id = ::Rho::RHO.get_user_db().select_from_table('client_info','client_id')[0]
         c_id.nil? ? nil : c_id['client_id']
       end
       
       def database_full_reset
         SyncEngine.stop_sync
         
-        ::Rhom::RhomDbAdapter.execute_sql("UPDATE client_info SET reset=1")
-        ::Rhom::RhomDbAdapter.execute_sql("UPDATE client_info SET initialsync_state=0")
-        ::Rhom::RhomDbAdapter.execute_sql("UPDATE sources SET token=0")
+        ::Rho::RHO.get_user_db().execute_sql("UPDATE client_info SET reset=1")
+        ::Rho::RHO.get_user_db().execute_sql("UPDATE client_info SET initialsync_state=0")
+        ::Rho::RHO.get_user_db().execute_sql("UPDATE sources SET token=0")
         
-        ::Rhom::RhomDbAdapter.delete_all_from_table('changed_values')
-#        if defined? RHO_DBME
-            #::Rhom::RhomAttribManager.reset_all
-            ::Rhom::RhomDbAdapter.destroy_table('object_values')
-            #::Rhom::RhomDbAdapter.delete_all_from_table('object_values')
-#        else
-#            ::Rhom::RhomDbAdapter.delete_all_from_table('object_values')
-#            ::Rhom::RhomDbAdapter.execute_sql("VACUUM")
-#        end    
+        ::Rho::RHO.get_user_db().delete_all_from_table('changed_values')
+        ::Rho::RHO.get_application_db().delete_all_from_table('changed_values')
+        
+        ::Rho::RHO.get_user_db().destroy_table('object_values')
+        ::Rho::RHO.get_application_db().destroy_table('object_values')
       end
       
       def database_full_reset_and_logout

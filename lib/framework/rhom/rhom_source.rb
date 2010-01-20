@@ -33,7 +33,7 @@ module Rhom
     end
     
     def distinct_objects
-        ::Rhom::RhomDbAdapter::select_from_table(
+        ::Rho::RHO.get_src_db(@name).select_from_table(
             'object_values',
             'object',
             {"source_id"=>@source_id},
@@ -49,13 +49,13 @@ module Rhom
       def find(*args)
         list = []
         if args.first == :all
-          results = ::Rhom::RhomDbAdapter::select_from_table('sources', '*')
+          results = ::Rho::RHO.get_src_db().select_from_table('sources', '*')
           
           results.each do |result|
             list << RhomSource.new(result)
           end
         else
-          result = ::Rhom::RhomDbAdapter::select_from_table('sources', '*', 
+          result = ::Rho::RHO.get_src_db().select_from_table('sources', '*', 
                                                             {"source_id" => strip_braces(args.first)}).first
           puts 'result: ' + result.inspect
           list << RhomSource.new(result)

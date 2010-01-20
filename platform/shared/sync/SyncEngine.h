@@ -52,7 +52,8 @@ public:
 
 private:
     VectorPtr<CSyncSource*> m_sources;
-    db::CDBAdapter& m_dbAdapter;
+    db::CDBAdapter& m_dbUserAdapter;
+    db::CDBAdapter& m_dbAppAdapter;
     common::CAutoPtr<net::INetRequest> m_NetRequest;
     common::CAutoPtr<ISyncProtocol> m_SyncProtocol;
     ESyncState m_syncState;
@@ -64,7 +65,7 @@ private:
     int m_nSyncPageSize;
 
 public:
-    CSyncEngine(db::CDBAdapter& db);
+    CSyncEngine(db::CDBAdapter& dbUser, db::CDBAdapter& dbApp);
     ~CSyncEngine(void){}
 
     void setFactory(common::IRhoClassFactory* factory){ 
@@ -110,7 +111,9 @@ public:
     boolean resetClientIDByNet(const String& strClientID);//throws Exception
     void doInitialSync(String strClientID);//throws Exception
 
-    db::CDBAdapter& getDB(){ return m_dbAdapter; }
+    db::CDBAdapter& getDB(){ return m_dbUserAdapter; }
+    db::CDBAdapter& getAppDB(){ return m_dbAppAdapter; }
+
     CSyncNotify& getNotify(){ return m_oSyncNotify; }
     net::INetRequest& getNet(){ return *m_NetRequest; }
     ISyncProtocol& getProtocol(){ return *m_SyncProtocol; }

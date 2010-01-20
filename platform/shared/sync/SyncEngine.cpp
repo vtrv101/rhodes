@@ -31,7 +31,7 @@ using namespace rho::net;
 using namespace rho::common;
 using namespace rho::json;
 
-CSyncEngine::CSyncEngine(db::CDBAdapter& db): m_dbAdapter(db), m_NetRequest(0), m_syncState(esNone), m_oSyncNotify(*this)
+CSyncEngine::CSyncEngine(db::CDBAdapter& dbUser, db::CDBAdapter& dbApp): m_dbUserAdapter(dbUser), m_dbAppAdapter(dbApp), m_NetRequest(0), m_syncState(esNone), m_oSyncNotify(*this)
 {
     m_bStopByUser = false;
     m_nSyncPageSize = 2000;
@@ -235,7 +235,7 @@ void CSyncEngine::doSearch(rho::Vector<rho::String>& arSources, String strParams
         if ( pSrc == null )
             continue;
         CSyncSource& oSrc = *pSrc;
-        getDB().executeSQL("UPDATE sources set last_updated=?,last_inserted_size=?,last_deleted_size=?, \
+        oSrc.getDB().executeSQL("UPDATE sources set last_updated=?,last_inserted_size=?,last_deleted_size=?, \
 						 last_sync_duration=?,last_sync_success=?, backend_refresh_time=? WHERE source_id=?", 
                          timeUpdated, oSrc.getInsertedCount(), oSrc.getDeletedCount(), 
                          (endTime-startTime).toULong(), oSrc.getGetAtLeastOnePage(), oSrc.getRefreshTime(),
@@ -267,7 +267,7 @@ void CSyncEngine::doSyncSource(const CSourceID& oSrcID)
         {
             LOG(ERROR) + "Sync one source : Unknown Source " + oSrcID.toString();
 
-            CSyncSource src(*this);
+            CSyncSource src(*this, getDB() );
     	    //src.m_strError = "Unknown sync source.";
             src.m_nErrCode = RhoRuby.ERR_RUNTIME;
 
@@ -302,15 +302,17 @@ void CSyncEngine::loadAllSources()
 {
     m_sources.clear();
 
-    DBResult( res, getDB().executeSQL("SELECT source_id,should_sync,token,name from sources ORDER BY priority") );
+    DBResult( res, getDB().executeSQL("SELECT source_id,sync_type,token,name, partition from sources ORDER BY priority") );
     for ( ; !res.isEnd(); res.next() )
     { 
-        int bShouldSync = res.getIntByIdx(1);
-        if ( bShouldSync == 0 )
+        String strShouldSync = res.getStringByIdx(1);
+        if ( strShouldSync.compare("none") == 0 )
             continue;
 
         String strName = res.getStringByIdx(3);
-        m_sources.addElement( new CSyncSource( res.getIntByIdx(0), strName, res.getUInt64ByIdx(2), *this) );
+        String strPartition = res.getStringByIdx(4);
+        m_sources.addElement( new CSyncSource( res.getIntByIdx(0), strName, res.getUInt64ByIdx(2), 
+            (strPartition.compare("user") == 0 ? getDB() : getAppDB()), *this) );
     }
 }
 

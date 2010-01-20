@@ -8,10 +8,6 @@
 	extern void rho_sync_doSyncSource(VALUE source_id,int show_status_popup);
 	#define dosearch rho_sync_doSearch
 	extern void rho_sync_doSearch(VALUE ar_sources, const char *from, const char *params, int sync_changes, int nProgressStep, const char* callback, const char* callback_params);
-	extern void rho_sync_lock();
-	#define lock_sync_mutex rho_sync_lock
-	extern void rho_sync_unlock();
-	#define unlock_sync_mutex rho_sync_unlock
 	extern void rho_sync_login(const char *login, const char *password, const char* callback);
 	#define login rho_sync_login
 	extern int rho_sync_logged_in();
@@ -28,7 +24,7 @@
 	#define set_pollinterval rho_sync_set_pollinterval
 	extern void rho_sync_set_syncserver(char* syncserver);
 	#define set_syncserver rho_sync_set_syncserver
-	extern VALUE rho_sync_get_attrs(int source_id);
+	extern VALUE rho_sync_get_attrs(const char* szPartition, int source_id);
 	#define get_src_attrs rho_sync_get_attrs
 	
     extern void  rho_sync_setobjectnotify_url(const char* szUrl);
@@ -65,8 +61,6 @@
 extern void dosync(bool show_status_popup);
 extern void dosync_source(VALUE source_id, bool show_status_popup);
 extern void dosearch(VALUE ar_sources, const char *from, const char *params, bool sync_changes, int nProgressStep, const char* callback, const char* callback_params);
-extern void lock_sync_mutex();
-extern void unlock_sync_mutex();
 extern void login(const char *login, const char *password, const char* callback);
 extern int logged_in();
 extern void logout();
@@ -75,7 +69,7 @@ extern void set_notification(int source_id, const char *url, char* params);
 extern void clear_notification(int source_id);
 extern void set_pollinterval(int interval);
 extern void set_syncserver(char* syncserver);
-extern VALUE get_src_attrs(int source_id);
+extern VALUE get_src_attrs(const char* szPartition, int source_id);
 extern void  set_objectnotify_url(const char* szUrl);
 extern void  add_objectnotify(int nSrcID, const char* szObject);
 extern void  clean_objectnotify();
