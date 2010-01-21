@@ -4,8 +4,8 @@ require 'zip/zip'
 
 namespace "rhosync" do
   task :config => "config:common" do
-    $host = 'localhost'
-    $port = '9292'
+    $host = 'rhosyncnew.staging.rhohub.com'
+    $port = '80'
     $url = "http://#{$host}:#{$port}"
     $agent = WWW::Mechanize.new
     $appname = $app_basedir.gsub(/\\/, '/').split('/').last
