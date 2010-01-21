@@ -124,6 +124,7 @@ static curl_slist *set_curl_options(CURL *curl, const char *method, const String
     // Just to enable cookie parser
     curl_easy_setopt(curl, CURLOPT_COOKIEFILE, "");
     curl_easy_setopt(curl, CURLOPT_TIMEOUT, 180);
+	curl_easy_setopt(curl, CURLOPT_TCP_NODELAY, 1);
 
     curl_easy_setopt(curl, CURLOPT_WRITEDATA, &result);
     curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, &curlBodyCallback);
@@ -168,20 +169,20 @@ static CURLMcode do_curl_perform(CURLM *curlm, CURL *curl)
 	CURLMcode err;
 	for(;;) {
 		err = curl_multi_perform(curlm, &running);
-		if (err == CURLM_CALL_MULTI_PERFORM)
+        if (err == CURLM_CALL_MULTI_PERFORM)
 			continue;
-		if (err == CURLM_OK && running > 0) {
-			fd_set rfd, wfd, efd;
+        if (err == CURLM_OK && running > 0) {
+            RAWTRACE("curl_multi_perform returns OK, but we still have active transfers");
+            fd_set rfd, wfd, efd;
 			int n = 0;
 			FD_ZERO(&rfd);
 			FD_ZERO(&wfd);
 			FD_ZERO(&efd);
 			curl_multi_fdset(curlm, &rfd, &wfd, &efd, &n);
-			if (n < 0)
-				n = 1;
+			if (n < 0) n = 0;
 			timeval tv;
-			tv.tv_sec = 1;
-			tv.tv_usec = 0;
+			tv.tv_sec = 0;
+			tv.tv_usec = 100000;
 			select(n, &rfd, &wfd, &efd, &tv);
 			continue;
 		}
@@ -421,7 +422,9 @@ INetResponse* CURLNetRequest::doRequestTry(const char* method, const String& str
     char* response = 0;
 
     do{
+		//RAWLOG_INFO("start Net request");
         response = (this->*func)(method, strUrl, strBody, &nRespCode, oSession);
+		//RAWLOG_INFO("end Net request");
         nTry++;
     }while( !m_bCancel && nRespCode<0 && nTry < MAX_NETREQUEST_RETRY);
 

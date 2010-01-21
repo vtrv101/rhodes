@@ -19,11 +19,32 @@ load 'platform/android/build/android.rake'
 load 'platform/iphone/rbuild/iphone.rake'
 load 'platform/wm/build/wm.rake'
 load 'platform/linux/tasks/linux.rake'
+
 load 'lib/build/tasks/rhosync.rake'
+
+namespace "framework" do
+  task :spec do
+    loadpath = $LOAD_PATH.inject("") { |load_path,pe| load_path += " -I" + pe }
+
+    rhoruby = ""
+
+    if RUBY_PLATFORM =~ /(win|w)32$/
+      rhoruby = 'res\\build-tools\\RhoRuby'
+    elsif RUBY_PLATFORM =~ /darwin/
+      rhoruby = 'res/build-tools/RubyMac'
+    else
+      rhoruby = 'res/build-tools/rubylinux'
+    end
+   
+    puts `#{rhoruby}  -I#{File.expand_path('spec/framework_spec/app/')} -I#{File.expand_path('lib/framework')} -I#{File.expand_path('lib/test')} -Clib/test framework_test.rb`
+  end
+end
+
 
 namespace "config" do
   task :common do
     $startdir = File.dirname(__FILE__)
+    $binextensions = []
     buildyml = 'rhobuild.yml'
 
     buildyml = ENV["RHOBUILD"] unless ENV["RHOBUILD"].nil?
@@ -60,6 +81,71 @@ def copy_assets(asset)
 end
 
 
+def add_extension(path,dest)
+  start = pwd
+  chdir path if File.directory?(path)
+
+  Dir.glob("*").each { |f| cp_r f,dest unless f =~ /^ext\// }
+
+  if File.exist? "ext.yml"
+    extension_config = YAML::load_file("ext.yml")
+
+    if extension_config["entry"] and extension_config["entry"] != ""
+      extfile = ""
+      File.open($startdir + "/platform/shared/ruby/ext/rho/extensions.c","r") do |f|
+        externstart = false
+        externwritten = false
+        callstart = false
+        callwritten = false
+
+        f.each_line do |line|
+          #are we starting a replacement area?
+          externstart = true if line =~ /EXTERNS/
+          callstart = true if line =~ /CALLS/
+
+          #if we arent in our replacement area, just copy the line
+          unless externstart or callstart
+            extfile << line
+          else
+            #did we just start the extern replacement area?
+            if externstart and not externwritten
+              #write marker and our new extension
+              extfile << line
+              extfile << "extern void #{extension_config["entry"]}(void);\n"
+              externwritten = true
+            end
+
+            #same for calls
+            if callstart and not callwritten
+              extfile << line
+              extfile << "#{extension_config["entry"]}();\n"
+              callwritten = true
+            end
+
+            #did we leave a replacement area
+            externstart = false if externstart and line =~ /END/
+            callstart = false if callstart and line =~ /END/
+
+            #if we are in a replacement area, check for lines that are there
+            #that we have marked as loaded and copy those over
+            #this is to make sure we are only loading things we explicitly marked
+            #leaving out lines that came from a previous run
+            if externstart or callstart
+              loaded = $binextensions.detect { |loadedext| line =~ Regexp.new("/#{loadedext}/") }
+              extfile << line unless loaded.nil?
+            end
+          end
+
+        end
+        $binextensions << extension_config["entry"]
+      end
+
+    end
+  end
+
+  chdir start
+
+end
 
 def common_bundle_start(startdir, dest)
   app = $app_path
@@ -96,9 +182,7 @@ def common_bundle_start(startdir, dest)
       end
 
       unless extpath.nil?
-        chdir extpath
-        Dir.glob("*").each { |f| cp_r f,dest }
-        chdir start
+        add_extension(extpath, dest)
       end
 
     end
@@ -129,7 +213,7 @@ def common_bundle_start(startdir, dest)
 
   Dir.glob("**/*.#{$config['platform']}.*").each do |file|
     oldfile = file.gsub(Regexp.new(Regexp.escape('.') + $config['platform'] + Regexp.escape('.')),'.')
-    rm oldfile
+    rm oldfile if File.exists? oldfile
     mv file,oldfile
   end
   
@@ -242,6 +326,7 @@ namespace "build" do
         exit 1
       end
       chdir startdir
+      
     end
 
     task :noxruby do
@@ -452,7 +537,7 @@ end
 
 namespace "buildall" do
   namespace "bb" do
-#    desc "Build all jdk versions for blackberry"
+    #    desc "Build all jdk versions for blackberry"
     task :production => "config:common" do
       $config["env"]["paths"].each do |k,v|
         if k.to_s =~ /^4/
@@ -523,8 +608,13 @@ end
 
 
 Rake::RDocTask.new do |rd|
-    rd.main = "README.textile"
-    rd.rdoc_files.include("README.textile", "lib/framework/**/*.rb")
+  rd.main = "README.textile"
+  rd.rdoc_files.include("README.textile", "lib/framework/**/*.rb")
 end
 Rake::Task["rdoc"].comment=nil
 Rake::Task["rerdoc"].comment=nil
+
+task :rdocpush => :rdoc do
+  puts "Pushing RDOC. This may take a while"
+  `scp -r html/* dev@dev.rhomobile.com:dev.rhomobile.com/rhodes/`
+end

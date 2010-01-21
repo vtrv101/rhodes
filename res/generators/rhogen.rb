@@ -150,8 +150,15 @@ module Rhogen
     end
 
     template :controller do |template|
+      underscore_name = name.camel_case.split(/(?=[A-Z])/).map{|w| w.downcase}.join("_")
       template.source = 'controller.rb'
-      template.destination = "app/#{name.camel_case}/controller.rb"
+      template.destination = "app/#{name.camel_case}/#{underscore_name}_controller.rb"
+    end
+
+    template :model do |template|
+      underscore_name = name.camel_case.split(/(?=[A-Z])/).map{|w| w.downcase}.join("_")
+      template.source = 'model.rb'
+      template.destination = "app/#{name.camel_case}/#{underscore_name}.rb"
     end
 
     def attributes?

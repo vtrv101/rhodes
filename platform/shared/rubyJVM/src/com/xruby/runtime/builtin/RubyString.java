@@ -132,6 +132,20 @@ public class RubyString extends RubyBasic {
         }
     }
 
+    public int appendString2(RubyValue v) {
+    	RubyString str = null;
+        if (v instanceof RubyString) {
+            str = (RubyString)v;
+        } else {
+            RubyValue r = RubyAPI.callPublicNoArgMethod(v, null, RubyID.toSID);
+            str = (RubyString)r;
+        }
+        
+        appendString(str);
+        
+        return str.length();
+    }
+    
     //@RubyAllocMethod
     public static RubyString alloc(RubyValue receiver) {
         return ObjectFactory.createString((RubyClass)receiver, "");
@@ -398,6 +412,15 @@ public class RubyString extends RubyBasic {
     			return RubyConstant.QTRUE;
     	}
         return RubyConstant.QFALSE;
+    }
+
+    //@RubyLevelMethod(name="ord")
+    public RubyValue ord() 
+    {
+    	if ( sb_ == null || sb_.length() == 0 )
+    		return ObjectFactory.createFixnum(0);
+    	
+    	return ObjectFactory.createFixnum(sb_.charAt(0));
     }
     
     //@RubyLevelMethod(name="strip")
@@ -685,15 +708,19 @@ public class RubyString extends RubyBasic {
             return true;
         } else {
             boolean changed = false;
-            for (;;) {
-                int index = StringBufferMe.indexOf(sb_, from);
-                if (index < 0) {
-                    return changed;
+            for (int i = 0; i < from.length(); i++) 
+            {
+                int index = sb_.toString().indexOf(from.charAt(i));
+                while (index >= 0) 
+                {
+	                sb_.deleteCharAt(index);
+	                changed = true;
+	                
+	                index = sb_.toString().indexOf(from.charAt(i));
                 }
-
-                sb_.delete(index, index + from.length());
-                changed = true;
             }
+            
+            return changed;
         }
     }
 
@@ -707,6 +734,17 @@ public class RubyString extends RubyBasic {
         return n;
     }
 
+    public String getChars( int nPos, int nLen)
+    {
+    	if ( nPos + nLen > sb_.length() )
+    		nLen =  sb_.length() - nPos;
+    			
+        char[] ca = new char[nLen];
+        this.sb_.getChars(nPos, nPos+nLen, ca, 0);
+        
+        return new String(ca);
+    }
+    
     //@RubyLevelMethod(name="swapcase")
     public RubyString swapcase() {
         int length = this.sb_.length();
@@ -903,7 +941,10 @@ public class RubyString extends RubyBasic {
         }
 
         value = value.substring(0, end);
-
+        int nPoint = value.indexOf('.'); 
+        if (nPoint >= 0 )
+        	value = value.substring(0, nPoint);
+        
         if (radix >= 2 && radix <= 36) {
             HugeInt bigint;
             try {

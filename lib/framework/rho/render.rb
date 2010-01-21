@@ -25,7 +25,7 @@ module Rho
     end
 
     def inst_render_index(filename)
-      puts 'inst_render_index'
+      rho_info 'inst_render_index'
       @request, @response = {}
       @params = {}
       require 'rho/rhoviewhelpers'
@@ -44,7 +44,20 @@ module Rho
     end
     
     def render(options = nil)
+      if @params['rho_callback'] == "1"
+        rho_error( "render call in callback. Call WebView.navigate instead" ) 
+        return ""
+      end  
+
       options = {} if options.nil? or !options.is_a?(Hash)
+      options = options.symbolize_keys
+
+      unless options[:string].nil?
+        @content = options[:string]
+        @back_action = options[:back] if options[:back]
+        @rendered = true
+        return @content
+      end
 
       unless options[:partial].nil?  # render the file and return, don't set rendered true for a partial.
         @content = render_partial(options)
@@ -68,7 +81,7 @@ module Rho
         options[:layout] = false if options[:layout].nil?
       end
 
-      puts 'render content: ' + @content.length.to_s
+      rho_info 'render content: ' + @content.length.to_s
       if xhr? and options[:use_layout_on_ajax] != true
         options[:layout] = false
       elsif options[:layout].nil? or options[:layout] == true
@@ -78,7 +91,7 @@ module Rho
       if options[:layout] != false
         layoutfile = RhoApplication::get_app_path(@request['application']) + options[:layout].to_s + "_erb.iseq"
         @content = eval_compiled_file(layoutfile, binding ) if File.exist?(layoutfile)
-        puts 'Layout file: ' + layoutfile + '. Content size: ' + @content.length.to_s
+        rho_info 'Layout file: ' + layoutfile + '. Content size: ' + @content.length.to_s
       end
 
       RhoController.start_objectnotify()
@@ -88,6 +101,9 @@ module Rho
     end
 
     def render_partial(options = nil)
+      options = {} if options.nil? or !options.is_a?(Hash)
+      options = options.symbolize_keys
+
       localclass = Class.new do
         def initialize(obj=nil)
           @vars = {}

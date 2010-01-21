@@ -95,6 +95,8 @@
 }
 
 - (void)deleteTabBar {
+    [barItems release];
+    barItems = nil;
     [tabBarController.view removeFromSuperview];
     [tabBarController release];
     tabBarController = nil;
@@ -107,6 +109,10 @@
 		[self loadTabBarItemFirstPage:(BarItem*)[barItems objectAtIndex:self.tabBarController.selectedIndex]];
 	}
 	self.activeTab = self.tabBarController.selectedIndex;
+}
+
+- (void)switchTab:(int)index {
+    self.tabBarController.selectedIndex = index;
 }
 
 @end

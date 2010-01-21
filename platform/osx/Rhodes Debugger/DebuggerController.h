@@ -2,12 +2,15 @@
 #import "LogController.h"
 #import "SourceViewController.h"
 #import "GdbConnection.h"
+#import "TcpConnection.h"
 
 @interface DebuggerController : NSObject {
 //    IBOutlet LogController * gdbController;
 	IBOutlet GdbConnection * gdbConnection;
     IBOutlet LogController * rubyController;
     IBOutlet SourceViewController * sourceController;
+
+	TcpConnection * tcpConnection;
 	
     IBOutlet id statusLabel;
     IBOutlet id gdbStatusLabel;
@@ -36,6 +39,9 @@
 - (IBAction)launchApp:(id)sender;
 
 - (IBAction)saveFile:(id)sender;
+
+- (IBAction)useGdbCheck:(id)sender;
+- (IBAction)disconnect:(id)sender;
 
 - (void)applicationDidFinishLaunching:(NSNotification*)aNotification;
 

@@ -262,6 +262,24 @@ extern "C" char* rho_sys_get_locale()
     return const_cast<char*>(_AtlModule.getCurrentLocale());
 }
 
+extern "C" int rho_sys_get_screen_width()
+{
+#ifdef _WIN32_WCE
+	return GetSystemMetrics(SM_CXSCREEN);
+#else
+	return CMainWindow::getScreenWidth();
+#endif
+}
+
+extern "C" int rho_sys_get_screen_height()
+{
+#ifdef _WIN32_WCE
+	return GetSystemMetrics(SM_CYSCREEN);
+#else
+	return CMainWindow::getScreenHeight();
+#endif
+}
+
 //Hook for ruby call to refresh web view
 
 extern "C" void webview_refresh(int index) {
@@ -308,6 +326,14 @@ extern "C" void choose_datetime(char* callback, char* title, long initial_time, 
 }
 
 extern "C" void create_nativebar(int bar_type, int nparams, char** params) {
+	//TODO: Implement me!
+}
+
+extern "C" void remove_nativebar() {
+	//TODO: Implement me!
+}
+
+extern "C" void nativebar_switch_tab(int index) {
 	//TODO: Implement me!
 }
 

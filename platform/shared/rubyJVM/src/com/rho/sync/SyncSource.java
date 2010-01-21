@@ -140,7 +140,7 @@ class SyncSource
     
 	void sync() throws Exception
 	{
-    	getNotify().fireSyncNotification(this, false, RhoRuby.ERR_NONE, RhoRuby.getMessageText("syncronizing") + getName() + "...");
+    	getNotify().fireSyncNotification(null, false, RhoRuby.ERR_NONE, RhoRuby.getMessageText("syncronizing") + getName() + "...");
 		
 	    TimeInterval startTime = TimeInterval.getCurrentTime();
 	    
@@ -421,6 +421,7 @@ class SyncSource
 	        processServerData(resp.getCharData());
 	        
 			//String strData =
+			//	"[{count:16},{version:2},{rt:0},{total_count:16},{token:\"31272969717999\"},{s:\"Years\",ol:[{o:\"7\",av:[{a:\"year\",i:847548358725629473,v:\"2000\"}]},{o:\"11\",av:[{a:\"year\",i:412366391662703410,v:\"1996\"}]},{o:\"20\",av:[{a:\"year\",i:137205700852855225,v:\"2010\"}]},{o:\"8\",av:[{a:\"year\",i:679868441309756807,v:\"1999\"}]},{o:\"12\",av:[{a:\"year\",i:456800387229102986,v:\"1995\"}]},{o:\"3\",av:[{a:\"year\",i:734226969968776876,v:\"2004\"}]},{o:\"9\",av:[{a:\"year\",i:56010014622863357,v:\"1998\"}]},{o:\"17\",av:[{a:\"year\",i:822839088903421583,v:\"2007\"}]},{o:\"4\",av:[{a:\"year\",i:694980267678628747,v:\"2003\"}]},{o:\"18\",av:[{a:\"year\",i:454618145604696729,v:\"2008\"}]},{o:\"5\",av:[{a:\"year\",i:161829862235046918,v:\"2002\"}]},{o:\"1\",av:[{a:\"year\",i:429713603438265228,v:\"2006\"}]},{o:\"19\",av:[{a:\"year\",i:53905967515604512,v:\"2009\"}]},{o:\"6\",av:[{a:\"year\",i:623979215240715853,v:\"2001\"}]},{o:\"10\",av:[{a:\"year\",i:906257189782972492,v:\"1997\"}]},{o:\"2\",av:[{a:\"year\",i:659684360823905556,v:\"2005\"}]}]}]";				
 	        //"[{count:10},{version:1},{total_count: 5425},{token: 123},{s:\"RhoDeleteSource\",ol:[{o:\"rho_del_obj\",av:[{i:55550425},{i:75665819},{i:338165272},{i:402396629},{i:521753981},{i:664143530},{i:678116186},{i:831092394},{i:956041217},{i:970452458}]}]}]";
 			/*"[{count: 124},{version: 1},{total_count: 5425},{token: 123},"
 	        "{s:\"Product\",ol:["
@@ -440,7 +441,8 @@ class SyncSource
 	        "]}]";
 
 			//u:\"query\",  
-			processServerData(strData.c_str()); */
+			 */
+			//processServerData(strData);
 
 	        if ( getAskParams().length() > 0 || getCurPageCount() == 0 )
 	            break;
@@ -487,8 +489,8 @@ class SyncSource
 	        oJsonArr.next();
 	    }
 	    
-	    if ( getServerObjectsCount() == 0 )
-	    	getNotify().fireSyncNotification(this, false, RhoRuby.ERR_NONE, "");
+//	    if ( getServerObjectsCount() == 0 )
+//	    	getNotify().fireSyncNotification(this, false, RhoRuby.ERR_NONE, "");
 	    
 	    if ( !oJsonArr.isEnd() )
 	    {
