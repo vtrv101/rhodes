@@ -293,6 +293,7 @@ void CDBAdapter::setBulkSyncDB(String fDataName)
 {
     CDBAdapter db;
     db.open( fDataName, m_strDbVer, true );
+    db.createTriggers();
 
     db.startTransaction();
 
@@ -403,25 +404,45 @@ void CDBAdapter::createSchema()
     char* errmsg = 0;
     CFilePath oPath(m_strDbPath);
 
-    String strSqlScript, strSqlTriggers;
+    String strSqlScript;
     CRhoFile::loadTextFile(oPath.changeBaseName("syncdb.schema").c_str(), strSqlScript);
-    CRhoFile::loadTextFile(oPath.changeBaseName("syncdb.triggers").c_str(), strSqlTriggers);
 
     if ( strSqlScript.length() == 0 )
     {
         LOG(ERROR)+"createSchema failed. Cannot read schema file: " + strSqlScript;
         return;
     }
+
+    int rc = sqlite3_exec(m_dbHandle, strSqlScript.c_str(),  NULL, NULL, &errmsg);
+
+    if ( rc != SQLITE_OK )
+        LOG(ERROR)+"createSchema failed. Error code: " + rc + ";Message: " + (errmsg ? errmsg : "");
+
+    if ( errmsg )
+        sqlite3_free(errmsg);
+
+    if ( rc == SQLITE_OK )
+        createTriggers();
+}
+
+void CDBAdapter::createTriggers()
+{
+    char* errmsg = 0;
+    CFilePath oPath(m_strDbPath);
+
+    String strSqlTriggers;
+    CRhoFile::loadTextFile(oPath.changeBaseName("syncdb.triggers").c_str(), strSqlTriggers);
+
     if ( strSqlTriggers.length() == 0 )
     {
         LOG(ERROR)+"createSchema failed. Cannot read triggers file: " + strSqlTriggers;
         return;
     }
 
-    int rc = sqlite3_exec(m_dbHandle, (strSqlScript+strSqlTriggers).c_str(),  NULL, NULL, &errmsg);
+    int rc = sqlite3_exec(m_dbHandle, strSqlTriggers.c_str(),  NULL, NULL, &errmsg);
 
     if ( rc != SQLITE_OK )
-        LOG(ERROR)+"createSchema failed. Error code: " + rc + ";Message: " + (errmsg ? errmsg : "");
+        LOG(ERROR)+"createTriggers failed. Error code: " + rc + ";Message: " + (errmsg ? errmsg : "");
 
     if ( errmsg )
         sqlite3_free(errmsg);

@@ -206,6 +206,7 @@ public:
     CDBVersion readDBVersion();//throws Exception
     void       writeDBVersion(const CDBVersion& ver);//throws Exception
     void createSchema();
+    void createTriggers();
     boolean checkDbError(int rc);
     boolean checkDbErrorEx(int rc, rho::db::CDBResult& res);
     sqlite3_stmt* createInsertStatement(rho::db::CDBResult& res, const String& tableName, CDBAdapter& db, String& strInsert);
