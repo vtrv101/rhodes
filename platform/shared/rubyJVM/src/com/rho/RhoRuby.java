@@ -125,10 +125,10 @@ public class RhoRuby {
         	//Class mainRuby = Class.forName("xruby.ServeME.main");
         	if ( helper != null )
         	{
-        		DBAdapter.getInstance().startTransaction();
+        		DBAdapter.startAllDBTransaction();
 	    		mainObj = helper.createMainObject();//new xruby.ServeME.main();//(RubyProgram)mainRuby.newInstance();
 	    		receiver = mainObj.invoke();
-        		DBAdapter.getInstance().commit();
+        		DBAdapter.commitAllDBTransaction();
         		
         		RubyModule modRhom = (RubyModule)RubyRuntime.ObjectClass.getConstant("Rhom");
         	}

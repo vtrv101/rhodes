@@ -137,8 +137,7 @@ void CSyncSource::syncClientBlobs(const String& strBaseQuery)
 
         String strFilePath = blob.getFilePath().length() > 0 ? RHODESAPP().getRhoRootPath() + "apps" + blob.getFilePath() : "";
 
-        NetResponse( resp, getNet().pushFile( getProtocol().getVersion() < 3 ? strBaseQuery + "&" + blob.getBody() : strBaseQuery, 
-            getProtocol().getVersion() >= 3 ? blob.getBody() : "", strFilePath, &getSync()) );
+        NetResponse( resp, getNet().pushFile( strBaseQuery, blob.getBody(), strFilePath, &getSync()) );
         if ( !resp.isOK() )
         {
             getSync().setState(CSyncEngine::esStop);
@@ -240,7 +239,7 @@ void CSyncSource::makePushBody_Ver3(String& strBody, const String& strUpdateType
         return;
     }
 
-    String strCurObject;
+    String strCurObject = "";
     boolean bFirst = true;
     for( ; !res.isEnd(); res.next() )
     {

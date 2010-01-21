@@ -269,7 +269,7 @@ public class RhoConf {
 		
 		NetResponse resp = null;
 		try{
-			resp = nq.pushFile(strQuery, RhoLogger.getLogConf().getLogFilePath(), com.rho.sync.SyncThread.getSyncEngine() );
+			resp = nq.pushFile(strQuery, "", RhoLogger.getLogConf().getLogFilePath(), com.rho.sync.SyncThread.getSyncEngine() );
 		}catch(Exception exc)
 		{
 			LOG.ERROR("send_log failed.", exc);

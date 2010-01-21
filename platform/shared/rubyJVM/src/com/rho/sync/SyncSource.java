@@ -41,8 +41,6 @@ class SyncSource
 	private static final RhoProfiler PROF = RhoProfiler.RHO_STRIP_PROFILER ? new RhoEmptyProfiler() : 
 		new RhoProfiler();
 
-	public static final int edpNone = 0, edpDeleteObjects = 2;
-	
 	static class SyncBlob
 	{
 	   String m_strBody;
@@ -57,65 +55,63 @@ class SyncSource
 	};
 	
     SyncEngine m_syncEngine;
-
+    DBAdapter  m_dbAdapter;
+    
     Integer  m_nID;
     String m_strName;
-    String m_strUrl;
     long m_token = 0;
     boolean m_bTokenFromDB; 
     
     int m_nCurPageCount, m_nInserted, m_nDeleted, m_nTotalCount, m_nAttribCounter=0;
     boolean m_bGetAtLeastOnePage = false;
-    int m_eSyncServerDataPass = edpNone;
     int m_nErrCode = RhoRuby.ERR_NONE;
     String m_strError = "";
-    String m_strParams = "";
-    String m_strAction = "";
-    boolean m_bSearchSyncChanges = false;
-    int     m_nProgressStep = -1;
+    public boolean m_bIsSearch = false;
     
-	String m_strPushBody = "";
+	//String m_strPushBody = "";
     Vector/*Ptr<CSyncBlob*>*/ m_arSyncBlobs = new Vector();
     
-    String m_strAskParams = "";
     int m_nRefreshTime = 0;
+    int m_nProgressStep = -1;
     
-    String getUrl() { return m_strUrl; }
     Integer getID() { return m_nID; }
     String getName() { return m_strName; }
     int getServerObjectsCount(){ return m_nInserted+m_nDeleted; }
-    boolean isSearch(){ return m_strParams.length() > 0;}
+    boolean isSearch(){ return m_bIsSearch;}
     
     long getToken(){ return m_token; }
+    boolean isTokenFromDB(){ return m_bTokenFromDB; }    
     void setToken(long token){ m_token = token; m_bTokenFromDB = false; }
     boolean isEmptyToken()
     {
     	return m_token == 0;
     }
-    void setAskParams(String ask){ m_strAskParams = ask;}
-    String getAskParams(){ return m_strAskParams;}
+    
+    int getProgressStep(){ return m_nProgressStep; }
+    void setProgressStep(int nProgressStep){ m_nProgressStep = nProgressStep; }
+
+    boolean getGetAtLeastOnePage(){ return m_bGetAtLeastOnePage; }
+    int getRefreshTime(){ return m_nRefreshTime; }
+    
     int getInsertedCount() { return m_nInserted; }
     int getDeletedCount() { return m_nDeleted; }
     void setCurPageCount(int nCurPageCount){m_nCurPageCount = nCurPageCount;}
     void setTotalCount(int nTotalCount){m_nTotalCount = nTotalCount;}
     int  getCurPageCount(){return m_nCurPageCount;}
     int  getTotalCount(){return m_nTotalCount;}
-    int  getProgressStep(){ return m_nProgressStep; }
 
-    void setSyncServerDataPass(int ePass){m_eSyncServerDataPass = ePass;}
-    boolean isDeleteObjectsPass(){ return m_eSyncServerDataPass == edpDeleteObjects; }
-    
     SyncEngine getSync(){ return m_syncEngine; }
     SyncNotify getNotify(){ return getSync().getNotify(); }
-	DBAdapter getDB(){ return getSync().getDB(); }
 	NetRequest getNet(){ return getSync().getNet(); }
+	ISyncProtocol getProtocol(){ return getSync().getProtocol(); }
 	void setRefreshTime( int nRefreshTime ){ m_nRefreshTime = nRefreshTime;}
+	DBAdapter getDB(){ return m_dbAdapter; }
 	
-    SyncSource(int id, String strUrl, String name, long token, SyncEngine syncEngine )
+    SyncSource(int id, String name, long token, DBAdapter db, SyncEngine syncEngine )
     {
     	m_syncEngine = syncEngine;
+    	m_dbAdapter = db;
         m_nID = new Integer(id);
-        m_strUrl = strUrl;
         m_strName = name;
         m_token = token;
         m_bTokenFromDB = true;
@@ -125,11 +121,11 @@ class SyncSource
         m_nDeleted = 0;
     }
 	
-    SyncSource(SyncEngine syncEngine)
+    SyncSource(SyncEngine syncEngine, DBAdapter db)
     {
     	m_syncEngine = syncEngine;
+    	m_dbAdapter = db;
         m_nID = new Integer(0);
-        m_strUrl = "";
         m_strName = "";
         m_bTokenFromDB = true;
         
@@ -143,44 +139,13 @@ class SyncSource
     	getNotify().fireSyncNotification(null, false, RhoRuby.ERR_NONE, RhoRuby.getMessageText("syncronizing") + getName() + "...");
 		
 	    TimeInterval startTime = TimeInterval.getCurrentTime();
+	    m_bIsSearch = false;
 	    
 	    try{
-	    	PROF.START("Pull");
 	        if ( isEmptyToken() )
 	            processToken(1);
 	    	
-	        boolean bSyncedServer = false;
-	        if ( m_strParams.length() == 0 || m_bSearchSyncChanges )
-	        {
-	            if ( isPendingClientChanges() )
-	            {
-	            	LOG.INFO("Client has unconfirmed items in database. Sync server first.");
-	                syncServerChanges();
-	                bSyncedServer = true;
-	            }
-
-	            if ( bSyncedServer && isPendingClientChanges() )
-	            {
-	            	LOG.INFO("Client still has unconfirmed items in database. Sync is stopped.");
-	                getSync().setState(SyncEngine.esStop);
-	            }
-	            else
-	            {
-	                boolean bSyncClient = false;
-	                {
-	                    IDBResult res = getDB().executeSQL("SELECT object FROM changed_values WHERE source_id=? and sent<=1 LIMIT 1 OFFSET 0", getID());
-	                    bSyncClient = !res.isEnd();
-	                }
-	                if ( bSyncClient )
-	                {
-	                    syncClientChanges();
-	                    getAndremoveAsk();
-	                    bSyncedServer = false;
-	                }
-	            }
-	        }
-	        PROF.STOP("Pull");
-
+	        boolean bSyncedServer = syncClientChanges();
 	        if ( !bSyncedServer )
 	        	syncServerChanges();
 	        
@@ -190,13 +155,45 @@ class SyncSource
 	    	throw exc;
 	    }finally{
 		   TimeInterval endTime = TimeInterval.getCurrentTime();
-		    getDB().executeSQL("UPDATE sources set last_updated=?,last_inserted_size=?,last_deleted_size=?, "+
+		   getDB().executeSQL("UPDATE sources set last_updated=?,last_inserted_size=?,last_deleted_size=?, "+
 								 "last_sync_duration=?,last_sync_success=?, backend_refresh_time=? WHERE source_id=?", 
 		                         new Long(endTime.toULong()/1000), new Integer(getInsertedCount()), new Integer(getDeletedCount()), new Long((endTime.minus(startTime)).toULong()), 
 		                         new Integer(m_bGetAtLeastOnePage?1:0), new Integer(m_nRefreshTime), getID() );
 	    }
 	}
 
+	boolean syncClientChanges()throws Exception
+	{
+	    boolean bSyncedServer = false;
+	    if ( isPendingClientChanges() )
+	    {
+	        syncServerChanges();
+	        bSyncedServer = true;
+	    }
+
+	    if ( bSyncedServer && isPendingClientChanges() )
+	        getSync().setState(SyncEngine.esStop);
+	    else
+	    {   
+	      	PROF.START("Pull");
+
+	        boolean bSyncClient = false;
+	        {
+	            IDBResult res = getDB().executeSQL("SELECT object FROM changed_values WHERE source_id=? LIMIT 1 OFFSET 0", getID());
+	            bSyncClient = !res.isEnd();
+	        }
+	        if ( bSyncClient )
+	        {
+	            doSyncClientChanges();
+	            bSyncedServer = false;
+	        }
+
+	        PROF.STOP("Pull");
+	    }
+
+	    return bSyncedServer;
+	}
+	
 	boolean isPendingClientChanges()throws DBException
 	{
 	    IDBResult res = getDB().executeSQL("SELECT object FROM changed_values WHERE source_id=? and update_type='create' and sent>1  LIMIT 1 OFFSET 0", getID());
@@ -205,17 +202,19 @@ class SyncSource
 	
 	void syncClientBlobs(String strBaseQuery)throws Exception
 	{
-	    String strQuery;
 	    for( int i = 0; i < m_arSyncBlobs.size(); i ++)
 	    {
 	        SyncBlob blob = (SyncBlob)m_arSyncBlobs.elementAt(i);
 	
-	        String strFilePath = RhoClassFactory.createFile().getDirPath("");
-	        strFilePath += blob.getFilePath();
+	        String strFilePath = "";
+	        if (blob.getFilePath()!=null && blob.getFilePath().length()>0)
+	        {
+	        	RhoClassFactory.createFile().getDirPath("");
+	        	strFilePath += blob.getFilePath();
+	        }
 	        
-	        strQuery = strBaseQuery + "&" + blob.getBody();
 	        try{
-		        NetResponse resp = getNet().pushFile(strQuery, strFilePath, getSync() );
+	            NetResponse resp = getNet().pushFile( strBaseQuery, blob.getBody(), strFilePath, getSync()) ;
 		        if ( !resp.isOK() )
 		        {
 		            getSync().setState(SyncEngine.esStop);
@@ -235,9 +234,42 @@ class SyncSource
 	    m_arSyncBlobs.removeAllElements();
 	}
 
-	void syncClientChanges()throws Exception
+	void doSyncClientChanges()throws Exception
 	{
 	    String[] arUpdateTypes = {"create", "update", "delete"};
+	    boolean arUpdateSent[] = {false, false, false};
+
+	    m_arSyncBlobs.removeAllElements();
+	    String strBody = "{\"source_name\":\"" + getName() + "\",\"client_id\":\"" + getSync().getClientID() + "\"";
+	    boolean bSend = false;
+	    for( int i = 0; i < 3 && getSync().isContinueSync(); i++ )
+	    {
+	        String strBody1 = makePushBody_Ver3(arUpdateTypes[i]);
+	        if (strBody1.length() > 0)
+	        {
+	            strBody += "," + strBody1;
+	            arUpdateSent[i] = true;
+	            bSend = true;
+	        }
+	    }
+	    strBody += "}";
+
+	    if ( bSend )
+	    {
+	        LOG.INFO("Push client changes to server. Source: " + getName() + "Size :" + strBody.length() );
+	        LOG.TRACE("Push body: " + strBody);		
+
+	        NetResponse resp = getNet().pushData(
+	            getProtocol().getClientChangesUrl(getName(), "", getSync().getClientID()),strBody, getSync());
+	        if ( !resp.isOK() )
+	        {
+	            getSync().setState(SyncEngine.esStop);
+	            m_nErrCode = RhoRuby.ERR_REMOTESERVER;
+	        }
+	    }
+
+	    afterSyncClientChanges(arUpdateSent);
+/*	    
 	    for( int i = 0; i < 3 && getSync().isContinueSync(); i++ )
 	    {
 	        String strUrl = getUrl() + "/" + arUpdateTypes[i];
@@ -282,100 +314,172 @@ class SyncSource
 	            //
 	            	getDB().executeSQL("DELETE FROM changed_values WHERE source_id=? and update_type=? and sent=1", getID(), arUpdateTypes[i] );
 	        }
+	    }*/
+	}
+	
+	void afterSyncClientChanges(boolean arUpdateSent[])throws Exception
+	{
+	    String arUpdateTypes[] = {"create", "update", "delete"};
+	    for( int i = 0; i < 3 && getSync().isContinueSync(); i++ )
+	    {
+	        if ( m_arSyncBlobs.size() > 0 )
+	        {
+			    LOG.INFO( "Push blobs to server. Source: " + getName() + "Count :" + m_arSyncBlobs.size() );
+	            //oo conflicts
+	            if ( i < 1 ) //create
+	                getDB().executeSQL("UPDATE changed_values SET sent=2 WHERE source_id=? and update_type=? and (attrib_type IS NULL or attrib_type!=?) and sent=1", 
+	                    getID(), arUpdateTypes[i], "blob.file" );
+	            else
+	            //
+	                getDB().executeSQL("DELETE FROM changed_values WHERE source_id=? and update_type=? and (attrib_type IS NULL or attrib_type!=? and sent=1)", 
+	                    getID(), arUpdateTypes[i], "blob.file" );
+
+	            //TODO: sync blobs ver3
+	            syncClientBlobs(getProtocol().getClientChangesUrl(getName(), arUpdateTypes[i], getSync().getClientID()));
+	        }else if ( arUpdateSent[i] )
+	        {
+	            //oo conflicts
+	            if ( i < 1 ) //create
+	                getDB().executeSQL("UPDATE changed_values SET sent=2 WHERE source_id=? and update_type=? and sent=1", getID(), arUpdateTypes[i] );
+	            else
+	            //
+	                getDB().executeSQL("DELETE FROM changed_values WHERE source_id=? and update_type=? and sent=1", getID(), arUpdateTypes[i] );
+	        }
 	    }
 	}
 	
-	/*
-	 * Construct the body of the request by filtering 
-	 * the attr_filter string. The body format should
-	 * look like the following:
-	 * create: attrvals[][attrib]=<name|industry>&attrvals[][object]=<locallygeneratedid>&attrvals[][value]=<some value>
-	 * update: attrvals[][attrib]=<name|industry>&attrvals[][object]=<remoteid>&attrvals[][value]=<some new value>
-	 * delete: attrvals[][attrib]=<name|industry>&attrvals[][object]=<remoteid>
-	 */
-	
-	String makePushBody( String szUpdateType)throws DBException
+	//{"source_name":"SampleAdapter","client_id":1,"create":{"1":{"brand":"Apple","name":"iPhone","price":"199.99"}}}
+	//{"source_name":"SampleAdapter","client_id":1,"update":{"1":{"brand":"Apple","name":"iPhone","price":"199.99"}}}
+	//{"source_name":"SampleAdapter","client_id":1,"delete":{"1":{"brand":"Apple","name":"iPhone","price":"199.99"}}}
+	//{"source_name":"SampleAdapter","client_id":1,"delete":{"3":{"brand":"HTC","name":"Fuze","price":"299.99"}},"create":{"1":{"brand":"Apple","name":"iPhone","price":"199.99"}},"update":{"2":{"brand":"Android","name":"G2","price":"99.99"}}}
+	String makePushBody_Ver3( String strUpdateType)throws DBException
 	{
 		String strBody = "";
-        getDB().Lock();
-		
-	    IDBResult res = getDB().executeSQL("SELECT attrib, object, value, attrib_type, main_id "+
-						 "FROM changed_values where source_id=? and update_type =? and sent<=1 ORDER BY sent DESC", getID(), szUpdateType );
+	    getDB().Lock();
+	    IDBResult res = getDB().executeSQL("SELECT attrib, object, value, attrib_type "+
+	        "FROM changed_values where source_id=? and update_type =? and sent<=1 ORDER BY object", getID(), strUpdateType );
+
 	    if ( res.isEnd() )
 	    {
-	    	getDB().Unlock();
-	    	return strBody;
+	        getDB().Unlock();
+	        return strBody;
 	    }
-	    
+
+	    String strCurObject = "";
+	    boolean bFirst = true;
 	    for( ; !res.isEnd(); res.next() )
 	    {
-	        String strSrcBody = "attrvals[][attrib]=" + res.getStringByIdx(0);
-	
-	        if ( res.getStringByIdx(1).length() > 0 ) 
-	            strSrcBody += "&attrvals[][object]=" + res.getStringByIdx(1);
-
-	        long main_id = res.getLongByIdx(4);
-	        if ( main_id != 0 )
-	            strSrcBody += "&attrvals[][id]=" + main_id;
-	        
+	        String strAttrib = res.getStringByIdx(0);
+	        String strObject = res.getStringByIdx(1);
 	        String value = res.getStringByIdx(2);
 	        String attribType = res.getStringByIdx(3);
-	
-	
-	        //if ( value.length() > 0 )
+
+	        if ( attribType.compareTo("blob.file") == 0 )
 	        {
-	            if ( attribType.equals("blob.file") )
-	            {
-	                FilePath oBlobPath = new FilePath(value);
-	                strSrcBody += "&attrvals[][value]=";
-	                strSrcBody += oBlobPath.getBaseName();
-	                strSrcBody += "&attrvals[][attrib_type]=blob";
-	
-	                if ( value.length() > 0 )
-	                	m_arSyncBlobs.addElement(new SyncBlob(strSrcBody,value));
-	                continue;
-	            }else
-	                strSrcBody += "&attrvals[][value]=" + value;
+	            FilePath oBlobPath = new FilePath(value);
+
+	            String strBlobBody = "{\"source_name\":\"" + getName() + "\",\"client_id\":\"" + getSync().getClientID() + "\",";
+	            strBlobBody += "\"" + strUpdateType + "\":{";
+	            strBlobBody += "\"" + strObject + "\":{";
+	            strBlobBody += "\"" + strAttrib + "\":\"" + oBlobPath.getBaseName() + "\"";
+	            //TODO: attrib_type set to blob?
+	            //strSrcBody += "&attrvals[][attrib_type]=blob";
+
+	            strBlobBody += "}}}";
+
+	            m_arSyncBlobs.addElement(new SyncBlob(strBlobBody,value));
+
+	            continue;
 	        }
-	
-	        if ( strBody.length() > 0 )
-	            strBody += "&";
-	
-	        strBody += strSrcBody;
+
+	        if ( strBody.length() == 0 )
+	            strBody += "\"" + strUpdateType + "\":{";
+
+	        if ( strObject.compareTo(strCurObject) != 0 )
+	        {
+	            if ( strCurObject.length() > 0 )
+	            {
+	                if ( !bFirst )
+	                    strBody += "}";
+	                strBody += ",";
+	            }
+
+	            bFirst = true;
+	            strBody += "\"" + strObject + "\"";
+	            strCurObject = strObject;
+	        }
+	            
+	        if (!bFirst)
+	            strBody += ",";
+
+	        if ( strAttrib.length() > 0  )
+	        {
+	            if ( bFirst )
+	                strBody += ":{";
+
+	            strBody += "\"" + strAttrib + "\":\"" + value + "\"";
+	            bFirst = false;
+	        }
 	    }
-	    
-	    getDB().executeSQL("UPDATE changed_values SET sent=1 WHERE source_id=? and update_type=? and sent=0", getID(), szUpdateType );	    
+
+	    if ( strBody.length() > 0 )
+	    {
+	        if ( !bFirst )
+	            strBody += "}";
+
+	        strBody += "}";
+	    }
+
+	    getDB().executeSQL("UPDATE changed_values SET sent=1 WHERE source_id=? and update_type=? and sent=0", getID(), strUpdateType );
 	    getDB().Unlock();
 	    
 	    return strBody;
 	}
 
-	void getAndremoveAsk()throws DBException
-	{
-	    String askParams = "";
-	    {
-	        IDBResult res = getDB().executeSQL("SELECT object, attrib, value "+
-				     "FROM changed_values WHERE source_id=? and update_type =?", getID(), "ask" );
-	        if ( !res.isEnd() )
-	        {
-	            askParams = res.getStringByIdx(2);
-
-	            getDB().executeSQL("DELETE FROM object_values WHERE object=? and attrib=? and source_id=?", 
-	                res.getStringByIdx(0), res.getStringByIdx(1), getID() );
-	        }
-	        
-		    getDB().executeSQL("DELETE FROM changed_values WHERE source_id=? and update_type=?", getID(), "ask" );
-	    }
-
-	    setAskParams(askParams);
-	}
-	
 	void syncServerChanges()throws Exception
 	{
 		LOG.INFO("Sync server changes source ID :" + getID() );
 		
 	    while( getSync().isContinueSync() )
 	    {
+	        setCurPageCount(0);
+	        String strUrl = getProtocol().getServerQueryUrl("");
+	        String strQuery = getProtocol().getServerQueryBody(getName(), getSync().getClientID(), getSync().getSyncPageSize());
+
+	        if ( !m_bTokenFromDB && getToken() > 1 )
+	            strQuery += "&token=" + getToken();
+
+			LOG.INFO( "Pull changes from server. Url: " + (strUrl+strQuery) );
+			
+			NetResponse resp = null;
+			try{
+		        PROF.START("Net");	    
+		        resp = getNet().pullData(strUrl+strQuery, getSync());
+				PROF.STOP("Net");
+	
+		        if ( !resp.isOK() )
+		        {
+		            getSync().stopSync();
+					m_nErrCode = RhoRuby.ERR_NETWORK;
+		            continue;
+		        }
+		    }catch(Exception exc)
+		    {
+		    	m_nErrCode = RhoRuby.getNetErrorCode(exc);
+		    	throw exc;
+		    }
+
+	        String szData = resp.getCharData();
+
+	        PROF.START("Parse");
+	        JSONArrayIterator oJsonArr = new JSONArrayIterator(szData);
+	        PROF.STOP("Parse");
+
+	        processServerResponse_ver3(oJsonArr);
+
+	        if ( getToken() == 0 )
+	            break;
+/*	    	
 	        setCurPageCount(0);
 	        String strUrl = getUrl();
 	        if ( m_strAction.length() > 0 )
@@ -420,35 +524,186 @@ class SyncSource
 	
 	        processServerData(resp.getCharData());
 	        
-			//String strData =
-			//	"[{count:16},{version:2},{rt:0},{total_count:16},{token:\"31272969717999\"},{s:\"Years\",ol:[{o:\"7\",av:[{a:\"year\",i:847548358725629473,v:\"2000\"}]},{o:\"11\",av:[{a:\"year\",i:412366391662703410,v:\"1996\"}]},{o:\"20\",av:[{a:\"year\",i:137205700852855225,v:\"2010\"}]},{o:\"8\",av:[{a:\"year\",i:679868441309756807,v:\"1999\"}]},{o:\"12\",av:[{a:\"year\",i:456800387229102986,v:\"1995\"}]},{o:\"3\",av:[{a:\"year\",i:734226969968776876,v:\"2004\"}]},{o:\"9\",av:[{a:\"year\",i:56010014622863357,v:\"1998\"}]},{o:\"17\",av:[{a:\"year\",i:822839088903421583,v:\"2007\"}]},{o:\"4\",av:[{a:\"year\",i:694980267678628747,v:\"2003\"}]},{o:\"18\",av:[{a:\"year\",i:454618145604696729,v:\"2008\"}]},{o:\"5\",av:[{a:\"year\",i:161829862235046918,v:\"2002\"}]},{o:\"1\",av:[{a:\"year\",i:429713603438265228,v:\"2006\"}]},{o:\"19\",av:[{a:\"year\",i:53905967515604512,v:\"2009\"}]},{o:\"6\",av:[{a:\"year\",i:623979215240715853,v:\"2001\"}]},{o:\"10\",av:[{a:\"year\",i:906257189782972492,v:\"1997\"}]},{o:\"2\",av:[{a:\"year\",i:659684360823905556,v:\"2005\"}]}]}]";				
-	        //"[{count:10},{version:1},{total_count: 5425},{token: 123},{s:\"RhoDeleteSource\",ol:[{o:\"rho_del_obj\",av:[{i:55550425},{i:75665819},{i:338165272},{i:402396629},{i:521753981},{i:664143530},{i:678116186},{i:831092394},{i:956041217},{i:970452458}]}]}]";
-			/*"[{count: 124},{version: 1},{total_count: 5425},{token: 123},"
-	        "{s:\"Product\",ol:["
-			"{oo:\"123\",o:\"2ed2e0c7-8c4c-99c6-1b37-498d250bb8e7\",av:["
-			"{a:\"first_name\",i:47354289,v:\"Lars. \n\n Burgess\", t:\"blob\"},"
-	        "{a:\"second_name\",i:55555,v:\"Burgess\"}]},"
-	        "{oo:\"456\", e:\"Something went wrong creating this record on the backend: code 7\"}"
-	        "]}]"; */
-			/*"[{count: 1},{version: 1},{total_count: 1},{token: 123},"
-	        "{s:\"Product\",ol:["
-	        "{oo:\"94\", e:\"Something went wrong creating this record on the backend: code 7\"}"
-	        "]}]";*/
-			/*"[{count: 1},{version: 1},{total_count: 1},{token: 123},"
-	        "{s:\"Product\",ol:["
-	        "{o:\"94\", av:["
-	        "{a:\"TEST\",i:55555,v:\"Geny\"}]},"
-	        "]}]";
-
-			//u:\"query\",  
-			 */
-			//processServerData(strData);
-
 	        if ( getAskParams().length() > 0 || getCurPageCount() == 0 )
 	            break;
+*/	            
 	    }
 	}
 
+	void processServerResponse_ver3(JSONArrayIterator oJsonArr)throws Exception
+	{
+	    PROF.START("Data1");
+
+	    int nVersion = 0;
+	    if ( !oJsonArr.isEnd() && oJsonArr.getCurItem().hasName("version") )
+	    {
+	        nVersion = oJsonArr.getCurItem().getInt("version");
+	        oJsonArr.next();
+	    }
+
+	    if ( nVersion != getProtocol().getVersion() )
+	    {
+	        LOG.ERROR("Sync server send data with incompatible version. Client version: " + getProtocol().getVersion() +
+	            "; Server response version: " + nVersion + ". Source name: " + getName() );
+	        getSync().stopSync();
+	        m_nErrCode = RhoRuby.ERR_UNEXPECTEDSERVERRESPONSE;
+	        return;
+	    }
+
+	    if ( !oJsonArr.isEnd() && oJsonArr.getCurItem().hasName("source") )
+	    {
+	        //skip it. it uses in search only
+	        oJsonArr.next();
+	    }
+
+	    if ( !oJsonArr.isEnd() && oJsonArr.getCurItem().hasName("token"))
+	    {
+	        processToken(oJsonArr.getCurItem().getUInt64("token"));
+	        oJsonArr.next();
+	    }
+
+	    if ( !oJsonArr.isEnd() && oJsonArr.getCurItem().hasName("count") )
+	    {
+	        setCurPageCount(oJsonArr.getCurItem().getInt("count"));
+	        oJsonArr.next();
+	    }
+
+	    if ( !oJsonArr.isEnd() && oJsonArr.getCurItem().hasName("refresh_time") )
+	    {
+	        setRefreshTime(oJsonArr.getCurItem().getInt("refresh_time"));
+	        oJsonArr.next();
+	    }
+
+	    if ( !oJsonArr.isEnd() && oJsonArr.getCurItem().hasName("progress_count") )
+	    {
+	        //TODO: progress_count
+	        //setTotalCount(oJsonArr.getCurItem().getInt("progress_count"));
+	        oJsonArr.next();
+	    }
+
+	    if ( !oJsonArr.isEnd() && oJsonArr.getCurItem().hasName("total_count") )
+	    {
+	        setTotalCount(oJsonArr.getCurItem().getInt("total_count"));
+	        oJsonArr.next();
+	    }
+	   /* if ( !oJsonArr.isEnd() && oJsonArr.getCurItem().hasName("source-error") )
+	    {
+	        CJSONEntry oJsonErr = oJsonArr.getCurItem().getEntry("source-error");
+	        m_strError = oJsonErr.getString("message");
+	        m_nErrCode = RhoRuby.ERR_CUSTOMSYNCSERVER;
+	        getSync().stopSync();
+	        return;
+	    }*/
+
+	    //if ( getServerObjectsCount() == 0 )
+	    //    getNotify().fireSyncNotification(this, false, RhoRuby.ERR_NONE, "");
+
+	    if ( getToken() == 0 )
+	    {
+	        //oo conflicts
+	        getDB().executeSQL("DELETE FROM changed_values where source_id=? and sent>=3", getID() );
+	        //
+
+	    }
+
+		LOG.INFO("Got " + getCurPageCount() + "(Processed: " +  getServerObjectsCount() + ") records of " + getTotalCount() + " from server. Source: " + getName()
+	         + ". Version: " + nVersion );
+
+	    PROF.STOP("Data1");
+	    if ( !oJsonArr.isEnd() && getSync().isContinueSync() )
+	    {
+	        JSONStructIterator iterCmds = new JSONStructIterator(oJsonArr.getCurItem());
+	        if ( !iterCmds.isEnd() )
+	        {
+	            PROF.START("Data");
+	            //TODO: support DBExceptions
+	            getDB().startTransaction();
+
+	            for( ; !iterCmds.isEnd() && getSync().isContinueSync(); iterCmds.next() )
+	            {
+	                String strCmd = iterCmds.getCurKey();
+	                if ( strCmd.compareTo("links") == 0 || strCmd.compareTo("delete") == 0 || strCmd.compareTo("insert") == 0)
+	                {
+	                    JSONStructIterator objIter = new JSONStructIterator(iterCmds.getCurValue());
+
+	                    for( ; !objIter.isEnd() && getSync().isContinueSync(); objIter.next() )
+	                    {
+	                        String strObject = objIter.getCurKey();
+	                        JSONStructIterator attrIter = new JSONStructIterator( objIter.getCurValue() );
+	                        for( ; !attrIter.isEnd() && getSync().isContinueSync(); attrIter.next() )
+	                        {
+	                            String strAttrib = attrIter.getCurKey();
+	                            String strValue = attrIter.getCurValue().getString();
+
+	                            processServerCmd_Ver3(strCmd,strObject,strAttrib,strValue);
+	                        }
+
+	                        int nSyncObjectCount  = getNotify().incLastSyncObjectCount(getID());
+	                        if ( getProgressStep() > 0 && (nSyncObjectCount%getProgressStep() == 0) )
+	                            getNotify().fireSyncNotification(this, false, RhoRuby.ERR_NONE, "");
+	                    }
+	                }
+	            }
+
+		        PROF.STOP("Data");		    
+	    	    PROF.START("DB");
+	            getDB().endTransaction();
+		        PROF.STOP("DB");
+
+	            getNotify().fireObjectsNotification();
+	        }
+	    }
+
+		PROF.START("Data1");
+	    if ( getCurPageCount() > 0 )
+	        getNotify().fireSyncNotification(this, false, RhoRuby.ERR_NONE, "");
+		PROF.STOP("Data1");
+	}
+	
+	void processServerCmd_Ver3(String strCmd, String strObject, String strAttrib, String strValue)throws Exception
+	{
+	    if ( strCmd.compareTo("insert") == 0 )
+	    {
+	        //TODO: blobs
+	        //CValue value(oJsonEntry,1);
+	        //if ( !downloadBlob(value) )
+		    //    return false;
+	        
+	        IDBResult resInsert = getDB().executeSQLReportNonUnique("INSERT INTO object_values "+
+	            "(attrib, source_id, object, value, attrib_type) VALUES(?,?,?,?,?)", 
+	             strAttrib, getID(), strObject, strValue, "" );
+	        if ( resInsert.isNonUnique() )
+	        {
+	            getDB().executeSQL("UPDATE object_values " +
+	                "SET value=?, attrib_type=? WHERE object=? and attrib=? and source_id=?", 
+	                strValue, "", strObject, strAttrib, getID() );
+
+	            // oo conflicts
+	            getDB().executeSQL("UPDATE changed_values SET sent=4 where object=? and attrib=? and source_id=? and sent>1", strObject, strAttrib, getID() );
+	            //
+	        }
+
+	        getNotify().onObjectChanged(getID(),strObject, SyncNotify.enUpdate);
+	        m_nInserted++;
+	    }else if (strCmd.compareTo("delete") == 0)
+	    {
+	        getDB().executeSQL("DELETE FROM object_values where object=? and attrib=? and source_id=?", strObject, strAttrib, getID() );
+	        getNotify().onObjectChanged(getID(), strObject, SyncNotify.enDelete);
+	        // oo conflicts
+	        getDB().executeSQL("UPDATE changed_values SET sent=3 where object=? and attrib=? and source_id=?", strObject, strAttrib, getID() );
+	        //
+
+	        m_nDeleted++;
+	    }else if ( strCmd.compareTo("links") == 0 )
+	    {
+	        getDB().executeSQL("UPDATE object_values SET object=? where object=? and source_id=?", strValue, strObject, getID() );
+	        getDB().executeSQL("UPDATE changed_values SET object=?,sent=3 where object=? and source_id=?", strValue, strObject, getID() );
+
+	        getNotify().onObjectChanged(getID(), strObject, SyncNotify.enCreate);
+	    }
+
+	}
+/*	
 	void processServerData(String szData)throws Exception
 	{
 		LOG.TRACE("Server data: " + szData);
@@ -695,7 +950,7 @@ class SyncSource
 	        }
 	    }
 	}
-	
+	*/
 	class CValue
 	{
 	    String m_strValue;

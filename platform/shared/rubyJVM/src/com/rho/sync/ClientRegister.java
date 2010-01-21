@@ -102,12 +102,8 @@ public class ClientRegister extends RhoThread
         
 		int port = RhoConf.getInstance().getInt("push_port");
     	
-		String strBody = "client_id=" + client_id +
-		"&device_pin=" + m_strDevicePin + 
-		"&device_port=" + (port > 0 ? port : DEFAULT_PUSH_PORT) +
-		"&device_type=" + m_sysInfo.getPlatform();
-    	
-		return strBody;
+	    return oSync.getProtocol().getClientRegisterBody(client_id, m_strDevicePin, (port > 0 ? port : DEFAULT_PUSH_PORT), 
+	    		m_sysInfo.getPlatform() );
     }
     
     private boolean doRegister(	SyncEngine oSync )throws Exception
@@ -122,24 +118,18 @@ public class ClientRegister extends RhoThread
     	if ( strBody.length() == 0)
     		return true; //already register
     	
-		String serverUrl = RhoConf.getInstance().getPath("syncserver");
-		if (serverUrl != null && serverUrl.length()>0) 
+		NetResponse resp = getNet().pushData(oSync.getProtocol().getClientRegisterUrl(), strBody, oSync);
+		if( resp.isOK() ) 
 		{
-			NetResponse resp = getNet().pushData(serverUrl+"clientregister", strBody, oSync);
-			if( resp.isOK() ) 
-			{
-				try {
-					oSync.getDB().executeSQL("UPDATE client_info SET token_sent=?, token=?", new Integer(1), m_strDevicePin );
-				} catch(Exception ex) {
-					LOG.ERROR("Error saving token_sent to the DB...");
-				}	
-				LOG.INFO("Registered client sucessfully...");
-				return true;
-			} else {
-				LOG.INFO("Network error POST-ing device pin to the server...");
-			}
+			try {
+				oSync.getDB().executeSQL("UPDATE client_info SET token_sent=?, token=?", new Integer(1), m_strDevicePin );
+			} catch(Exception ex) {
+				LOG.ERROR("Error saving token_sent to the DB...");
+			}	
+			LOG.INFO("Registered client sucessfully...");
+			return true;
 		} else {
-			LOG.INFO("Can't register client because syncserver url is not configured...");
+			LOG.INFO("Network error POST-ing device pin to the server...");
 		}
 		
 		return false;

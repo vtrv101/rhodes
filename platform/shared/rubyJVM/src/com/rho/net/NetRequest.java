@@ -25,6 +25,7 @@ public class NetRequest
 	{
 		public abstract void logout()throws Exception;
 		public abstract String getSession();
+		public abstract String getContentType();
 	}
 	
 	private IHttpConnection m_connection = null;
@@ -78,9 +79,11 @@ public class NetRequest
 				LOG.INFO("Cookie : " + (strSession != null ? strSession : "") );
 				if ( strSession != null && strSession.length() > 0 )
 					m_connection.setRequestProperty("Cookie", strSession );
-			}
+				
+				m_connection.setRequestProperty("Content-Type", oSession.getContentType());
+			}else
+				m_connection.setRequestProperty("Content-Type", "application/x-www-form-urlencoded");
 			
-			m_connection.setRequestProperty("Content-Type", "application/x-www-form-urlencoded");
 			m_connection.setRequestProperty("Connection", "keep-alive");
 			//m_connection.setRequestProperty("Accept", "application/x-www-form-urlencoded,application/json,text/html");
 			
@@ -185,7 +188,7 @@ public class NetRequest
 	static String szMultipartContType = 
 	    "multipart/form-data; boundary=----------A6174410D6AD474183FDE48F5662FCC5";
 
-	public NetResponse pushFile( String strUrl, String strFileName, IRhoSession oSession)throws Exception
+	public NetResponse pushFile( String strUrl, String strBody, String strFileName, IRhoSession oSession)throws Exception
 	{
 		SimpleFile file = null;
 		NetResponse resp = null;
@@ -197,6 +200,7 @@ public class NetRequest
 			int nTry = 0;
 			do{
 				try{
+					//TODO: send body if exist
 					resp = pushFile1(strUrl, file, oSession );
 					break;
 				}catch(IOException e)

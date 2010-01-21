@@ -1,5 +1,5 @@
 CREATE TABLE client_info (
- client_id VARCHAR(255) PRIMARY KEY,
+ client_id VARCHAR(255) default NULL,
  session VARCHAR(255) default NULL,
  token VARCHAR(255) default NULL,
  token_sent int default 0,

@@ -387,7 +387,7 @@ String CSyncEngine::requestClientIDByNet()
 void CSyncEngine::doBulkSync(String strClientID, int nBulkSyncState)//throws Exception
 {
     //TODO:doBulkSync
-    if ( nBulkSyncState >= 2 || !isContinueSync() )
+    //if ( nBulkSyncState >= 2 || !isContinueSync() )
         return;
 
 	LOG(INFO) + "Bulk sync: start";
@@ -400,7 +400,7 @@ void CSyncEngine::doBulkSync(String strClientID, int nBulkSyncState)//throws Exc
         if ( !isContinueSync() )
             return;
 
-	    getDB().executeSQL("UPDATE client_info SET bulksync_state=? where client_id=?", 1, strClientID );	    	
+	    getDB().executeSQL("UPDATE client_info SET bulksync_state=1 where client_id=?", strClientID );	    	
     }
 
     if ( m_bHasAppPartition )
@@ -409,7 +409,7 @@ void CSyncEngine::doBulkSync(String strClientID, int nBulkSyncState)//throws Exc
     if ( !isContinueSync() )
         return;
 
-    getDB().executeSQL("UPDATE client_info SET bulksync_state=? where client_id=?", 2, strClientID );
+    getDB().executeSQL("UPDATE client_info SET bulksync_state=2 where client_id=?", strClientID );
 
     getNotify().fireBulkSyncNotification(true, RhoRuby.ERR_NONE);        
 }
@@ -444,14 +444,13 @@ void CSyncEngine::loadBulkPartition(db::CDBAdapter& dbPartition, const String& s
         {
             int nTimeout = RHOCONF().getInt("bulksync_timeout_sec");
             if ( nTimeout == 0 )
-                nTimeout = 10;
+                nTimeout = 5;
 
             CSyncThread::getInstance()->sleep(nTimeout*1000);
             strCmd = "";
         }
     }
 
-    //TODO: check is server return no bulk sync
     if ( strCmd.compare("nop") == 0)
     {
 	    LOG(INFO) + "Bulk sync return no data.";
@@ -462,7 +461,9 @@ void CSyncEngine::loadBulkPartition(db::CDBAdapter& dbPartition, const String& s
 
     LOG(INFO) + "Bulk sync: download data from server: " + strDataUrl;
     //TODO: get server from url
-    NetResponse( resp1, getNet().pullFile("http://rhosyncnew.staging.rhohub.com/"+strDataUrl, fDataName, this) );
+    strDataUrl = "http://rhosyncnew.staging.rhohub.com/"+strDataUrl;
+
+    NetResponse( resp1, getNet().pullFile(strDataUrl, fDataName, this) );
     if ( !resp1.isOK() )
     {
 	    LOG(ERROR) + "Bulk sync failed: cannot download database file.";
@@ -583,7 +584,7 @@ void CSyncEngine::login(String name, String password, String callback)
 boolean CSyncEngine::isLoggedIn()
  {
     int nCount = 0;
-    DBResult( res , getDB().executeSQL("SELECT count(session) FROM client_info") );
+    DBResult( res , getDB().executeSQL("SELECT count(session) FROM client_info WHERE session IS NOT NULL") );
     if ( !res.isEnd() )
         nCount = res.getIntByIdx(0);
 

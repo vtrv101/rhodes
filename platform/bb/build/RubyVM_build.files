@@ -35,12 +35,15 @@ platform\shared\rubyJVM\src\com\rho\RhoThread.java
 platform\shared\rubyJVM\src\com\rho\SimpleFile.java
 platform\shared\rubyJVM\src\com\rho\StringScanner.java
 platform\shared\rubyJVM\src\com\rho\sync\JSONArrayIterator.java
+platform\shared\rubyJVM\src\com\rho\sync\JSONStructIterator.java
 platform\shared\rubyJVM\src\com\rho\sync\JSONEntry.java
 platform\shared\rubyJVM\src\com\rho\sync\SyncEngine.java
 platform\shared\rubyJVM\src\com\rho\sync\ClientRegister.java
 platform\shared\rubyJVM\src\com\rho\sync\ISyncStatusListener.java
 platform\shared\rubyJVM\src\com\rho\sync\SyncSource.java
 platform\shared\rubyJVM\src\com\rho\sync\SyncThread.java
+platform\shared\rubyJVM\src\com\rho\sync\SyncProtocol_3.java
+platform\shared\rubyJVM\src\com\rho\sync\ISyncProtocol.java
 platform\shared\rubyJVM\src\com\rho\sync\SyncNotify.java
 platform\shared\rubyJVM\src\com\rho\TestProfiler.java
 platform\shared\rubyJVM\src\com\rho\TestRhoLog.java

@@ -36,6 +36,20 @@ public class FilePath
         return makeFullPath(szFileName);
     }
 
+    public String changeExtension( String szExt )
+    {
+        int base = m_szPath.lastIndexOf('.');
+        if ( base >= 0 && base < m_szPath.length()-1 )
+        {
+            String res = m_szPath.substring(0, base);
+            res += szExt;
+
+            return res;
+        }
+
+        return makeFullPath(szExt);
+    }
+    
     int findLastSlash()
     {
         int slash = m_szPath.lastIndexOf('/');
