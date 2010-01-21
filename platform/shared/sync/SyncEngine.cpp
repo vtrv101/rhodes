@@ -461,7 +461,8 @@ void CSyncEngine::loadBulkPartition(db::CDBAdapter& dbPartition, const String& s
     String fDataName = dbPartition.getDBPath() + "_bulk";
 
     LOG(INFO) + "Bulk sync: download data from server: " + strDataUrl;
-    NetResponse( resp1, getNet().pullFile(strDataUrl, fDataName, this) );
+    //TODO: get server from url
+    NetResponse( resp1, getNet().pullFile("http://rhosyncnew.staging.rhohub.com/"+strDataUrl, fDataName, this) );
     if ( !resp1.isOK() )
     {
 	    LOG(ERROR) + "Bulk sync failed: cannot download database file.";

@@ -31,9 +31,9 @@ public class NetRequest
 	//private char[] m_charBuffer = new char[1024];
 	public  byte[]  m_byteBuffer = new byte[4096];
 	
-	public NetResponse pullData(String strUrl, String strBody, IRhoSession oSession ) throws Exception
+	public NetResponse pullData(String strUrl, IRhoSession oSession ) throws Exception
     {
-		return doRequestTry(strUrl, strBody, oSession, true);
+		return doRequestTry(strUrl, "", oSession, true);
     }
 
 	public NetResponse doRequestTry(String strUrl, String strBody, IRhoSession oSession, boolean bCloseConnection ) throws Exception
