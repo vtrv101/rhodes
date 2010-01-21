@@ -316,6 +316,28 @@ void CDBAdapter::setBulkSyncDB(String fDataName)
 	}
     //copy sources
 	{
+        String tableName = "sources";
+        String strSelect = "SELECT * from " + tableName;
+        DBResult( res , executeSQL( strSelect.c_str() ) );
+		String strInsert = "";
+        int rc = 0;
+	    for ( ; !res.isEnd(); res.next() )
+	    {
+            String strName = res.getStringByIdx(1);
+            DBResult( res2, db.executeSQL("SELECT name from sources where name=?", strName) );
+            if (!res2.isEnd())
+                continue;
+
+	    	sqlite3_stmt* stInsert = createInsertStatement(res, tableName, db, strInsert);
+
+            if (stInsert)
+            {
+                rc = sqlite3_step(stInsert);
+                checkDbError(rc);
+                sqlite3_finalize(stInsert);
+            }
+	    }
+/*
 		DBResult( res, executeSQL("SELECT name, sync_type, partition, priority from sources") );
 	    for ( ; !res.isEnd(); res.next() )
 	    {
@@ -323,7 +345,7 @@ void CDBAdapter::setBulkSyncDB(String fDataName)
 	    	
             db.executeSQL("UPDATE sources SET sync_type=?, partition=?, priority=? where name=?", 
                 res.getStringByIdx(1), res.getIntByIdx(2), res.getIntByIdx(3), strName ); 
-	    }
+	    }*/
 	}
 
     db.endTransaction();

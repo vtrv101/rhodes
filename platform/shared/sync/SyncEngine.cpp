@@ -309,7 +309,7 @@ void CSyncEngine::loadAllSources()
     for ( ; !res.isEnd(); res.next() )
     { 
         String strShouldSync = res.getStringByIdx(1);
-        if ( strShouldSync.compare("none") == 0 || strShouldSync.compare("bulkonly") == 0 )
+        if ( strShouldSync.compare("none") == 0 || strShouldSync.compare("bulk_sync_only") == 0 )
             continue;
 
         String strName = res.getStringByIdx(3);
@@ -387,7 +387,7 @@ String CSyncEngine::requestClientIDByNet()
 void CSyncEngine::doBulkSync(String strClientID, int nBulkSyncState)//throws Exception
 {
     //TODO:doBulkSync
-    //if ( nBulkSyncState >= 2 || !isContinueSync() )
+    if ( nBulkSyncState >= 2 || !isContinueSync() )
         return;
 
 	LOG(INFO) + "Bulk sync: start";
