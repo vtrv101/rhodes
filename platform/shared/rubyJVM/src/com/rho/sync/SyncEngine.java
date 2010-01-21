@@ -452,7 +452,7 @@ public class SyncEngine implements NetRequest.IRhoSession
 		    }
 
 		    //TODO:doBulkSync
-//	       	doBulkSync(clientID, nBulkSyncState);		    
+	       	doBulkSync(clientID, nBulkSyncState);		    
 		}
 		
 		return clientID;
@@ -554,12 +554,10 @@ public class SyncEngine implements NetRequest.IRhoSession
 	    }
 
 	    String fDataName = dbPartition.getDBPath() + "_bulk.data";
-
-	    LOG.INFO("Bulk sync: download data from server: " + strDataUrl);
-	    strDataUrl = getHostFromUrl(serverUrl) + strDataUrl;
-	    
+	    String strHsqlDataUrl = getHostFromUrl(serverUrl) + strDataUrl + ".hsqldb.data";
+	    LOG.INFO("Bulk sync: download data from server: " + strHsqlDataUrl);
 	    {
-		    NetResponse resp1 = getNet().pullFile(strDataUrl, fDataName, this);
+		    NetResponse resp1 = getNet().pullFile(strHsqlDataUrl, fDataName, this);
 		    if ( !resp1.isOK() )
 		    {
 			    LOG.ERROR("Bulk sync failed: cannot download database file.");
@@ -570,12 +568,10 @@ public class SyncEngine implements NetRequest.IRhoSession
 	    }
 	    
 	    String fScriptName = dbPartition.getDBPath() + "_bulk.script";
-
-	    LOG.INFO("Bulk sync: download script from server: " + strDataUrl);
-	    FilePath oPath = new FilePath(strDataUrl); 
-	    strDataUrl = oPath.changeExtension(".script");
+	    String strHsqlScriptUrl = getHostFromUrl(serverUrl) + strDataUrl + ".hsqldb.script";
+	    LOG.INFO("Bulk sync: download script from server: " + strHsqlScriptUrl);
 	    {
-		    NetResponse resp1 = getNet().pullFile(strDataUrl, fDataName, this);
+		    NetResponse resp1 = getNet().pullFile(strHsqlScriptUrl, fScriptName, this);
 		    if ( !resp1.isOK() )
 		    {
 			    LOG.ERROR("Bulk sync failed: cannot download database file.");

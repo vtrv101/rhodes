@@ -589,6 +589,24 @@ public class DBAdapter extends RubyBasic {
 			}
 		    //copy sources
 			{
+		        String tableName = "sources";
+		        String strSelect = "SELECT * from " + tableName;
+		        IDBResult res = executeSQL( strSelect );
+				String strInsert = "";
+			    for ( ; !res.isEnd(); res.next() )
+			    {
+		            String strName = res.getStringByIdx(1);
+		            Object[] values = {strName};
+		            IDBResult res2 = db.executeSQL("SELECT name from sources where name=?", values, false);
+		            if (!res2.isEnd())
+		                continue;
+
+			    	if ( strInsert.length() == 0 )
+			    		strInsert = createInsertStatement(res, tableName);
+			    	
+			    	db.executeSQL(strInsert, res.getCurData(), false );
+			    }
+/*				
 				IDBResult res = executeSQL("SELECT name, sync_type, partition, priority from sources", null);
 			    for ( ; !res.isEnd(); res.next() )
 			    {
@@ -596,7 +614,7 @@ public class DBAdapter extends RubyBasic {
 			    	Object[] values = {res.getStringByIdx(1), new Integer(res.getIntByIdx(2)),new Integer(res.getIntByIdx(3)),strName};
 			    	
 		            db.executeSQL("UPDATE sources SET sync_type=?, partition=?, priority=? where name=?",values, false); 
-			    }
+			    }*/
 			}
 			
 		    db.commit();
