@@ -1,73 +1,74 @@
 package com.rho.sync;
 
+import org.json.me.JSONException;
 import org.json.me.JSONObject;
+import java.util.Enumeration;
 class JSONStructIterator
 {
-	//TODO: JSONStructIterator
-    JSONStructIterator(String szData)
+	JSONObject m_object;
+	Enumeration m_enumKeys;
+	String m_strCurKey;
+	
+    JSONStructIterator(String szData)throws JSONException
     {
-/*        m_struct = 0;
-        m_curEntry = 0;
-        m_rootObject = json_tokener_parse(const_cast<char*>(szData));
-
-	    if ( !m_rootObject || is_error(m_rootObject) ) 
-            m_rootObject = 0;
-        else
-        {
-            m_struct = json_object_get_object((struct json_object *)m_rootObject);
-            m_curEntry = m_struct->head;
-        }*/
+    	m_object = new JSONObject(szData);
+    	m_enumKeys = m_object.keys();
+    	if ( m_enumKeys != null && m_enumKeys.hasMoreElements() )
+    		m_strCurKey = (String)m_enumKeys.nextElement();
     }
 
-    JSONStructIterator(JSONEntry oEntry, String strName)
+    JSONStructIterator(JSONEntry oEntry, String strName)throws JSONException
     {
-/*        m_struct = 0;
-        m_curEntry = 0;
-        m_rootObject = 0;
-
-        CJSONEntry oItem = oEntry.getEntry(strName);
-        if ( !oItem.isEmpty() )
-        {
-            m_struct = json_object_get_object( oItem.getObject() );
-            m_curEntry = m_struct->head;
-        }
-*/        
+    	m_object = (JSONObject)oEntry.m_object.get(strName);
+    	m_enumKeys = m_object.keys();
+    	if ( m_enumKeys != null && m_enumKeys.hasMoreElements() )
+    		m_strCurKey = (String)m_enumKeys.nextElement();
     }
 
     JSONStructIterator(JSONEntry oEntry)
     {
-/*        m_rootObject = 0;
-
-        m_struct = json_object_get_object( oEntry.getObject() );
-        m_curEntry = m_struct->head;
-*/        
+    	m_object = oEntry.m_object;
+    	m_enumKeys = m_object.keys();
+    	if ( m_enumKeys != null && m_enumKeys.hasMoreElements() )
+    		m_strCurKey = (String)m_enumKeys.nextElement();
     }
 
     boolean isEnd()
     {
-        return true;//m_curEntry == 0;
+        return m_strCurKey == null;
     }
 
     void  next()
     {
-        //m_curEntry = m_curEntry->next;
+    	if ( m_enumKeys != null && m_enumKeys.hasMoreElements() )
+    		m_strCurKey = (String)m_enumKeys.nextElement();
+    	else
+    		m_strCurKey = null;
     }
 
     void reset()
     {
-        //m_curEntry = m_struct->head;
+    	m_enumKeys = m_object.keys();
+    	if ( !isEnd() )
+    		m_strCurKey = (String)m_enumKeys.nextElement();
     }
 
     String getCurKey()
     {
-        return isEnd() ? new String() : "";//String((char*)m_curEntry->k);
+        return isEnd() ? new String() : m_strCurKey;
     }
 
-    JSONEntry getCurValue()
+	String getCurString()throws JSONException
+	{
+		return m_object.getString(m_strCurKey);
+	}
+    
+    JSONEntry getCurValue()throws JSONException
     {
-        return new JSONEntry( (JSONObject)null ); 
-        		//isEnd() ? null :
-        	    //( struct json_object *) m_curEntry->v );
+    	if ( isEnd() )
+    		return new JSONEntry( (JSONObject)null );
+    	
+		return new JSONEntry( (JSONObject)m_object.getJSONObject(m_strCurKey) );
     }
 
 }

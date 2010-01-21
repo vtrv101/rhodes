@@ -451,7 +451,8 @@ public class SyncEngine implements NetRequest.IRhoSession
 		    		getDB().executeSQL("UPDATE client_info SET reset=? where client_id=?", new Integer(0), clientID );	    	
 		    }
 
-	       	doBulkSync(clientID, nBulkSyncState);		    
+		    //TODO:doBulkSync
+//	       	doBulkSync(clientID, nBulkSyncState);		    
 		}
 		
 		return clientID;
@@ -481,10 +482,9 @@ public class SyncEngine implements NetRequest.IRhoSession
 
 	void doBulkSync(String strClientID, int nBulkSyncState)throws Exception
 	{
-	    //TODO:doBulkSync
-//	    if ( nBulkSyncState >= 2 || !isContinueSync() )
+	    if ( nBulkSyncState >= 2 || !isContinueSync() )
 	        return;
-/*
+
 		LOG.INFO("Bulk sync: start");
 		getNotify().fireBulkSyncNotification(false, RhoRuby.ERR_NONE);
 
@@ -507,7 +507,7 @@ public class SyncEngine implements NetRequest.IRhoSession
 	    getDB().executeSQL("UPDATE client_info SET bulksync_state=2 where client_id=?", strClientID );
 
 	    getNotify().fireBulkSyncNotification(true, RhoRuby.ERR_NONE);
-*/	            
+	            
 	}
 
 	void loadBulkPartition(DBAdapter dbPartition, String strPartition, String strClientID )throws Exception
@@ -556,8 +556,7 @@ public class SyncEngine implements NetRequest.IRhoSession
 	    String fDataName = dbPartition.getDBPath() + "_bulk.data";
 
 	    LOG.INFO("Bulk sync: download data from server: " + strDataUrl);
-	    //TODO: get server from url
-	    strDataUrl = "http://rhosyncnew.staging.rhohub.com/"+strDataUrl;
+	    strDataUrl = getHostFromUrl(serverUrl) + strDataUrl;
 	    
 	    {
 		    NetResponse resp1 = getNet().pullFile(strDataUrl, fDataName, this);
@@ -744,6 +743,12 @@ public class SyncEngine implements NetRequest.IRhoSession
 		getDB().executeSQL("DELETE FROM client_info");
 		
 		logout();
+	}
+	
+	static String getHostFromUrl( String strUrl )
+	{
+		URI uri = new URI(strUrl);
+		return uri.getHostSpecificPart() + "/";
 	}
 	
 }

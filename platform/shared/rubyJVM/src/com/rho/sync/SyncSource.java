@@ -633,7 +633,7 @@ class SyncSource
 	                        for( ; !attrIter.isEnd() && getSync().isContinueSync(); attrIter.next() )
 	                        {
 	                            String strAttrib = attrIter.getCurKey();
-	                            String strValue = attrIter.getCurValue().getString();
+	                            String strValue = attrIter.getCurString();
 
 	                            processServerCmd_Ver3(strCmd,strObject,strAttrib,strValue);
 	                        }

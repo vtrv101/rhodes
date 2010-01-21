@@ -414,6 +414,7 @@ void CSyncEngine::doBulkSync(String strClientID, int nBulkSyncState)//throws Exc
     getNotify().fireBulkSyncNotification(true, RhoRuby.ERR_NONE);        
 }
 
+static String getHostFromUrl( const String& strUrl );
 void CSyncEngine::loadBulkPartition(db::CDBAdapter& dbPartition, const String& strPartition, const String& strClientID )
 {
     String serverUrl = RHOCONF().getPath("syncserver");
@@ -460,8 +461,7 @@ void CSyncEngine::loadBulkPartition(db::CDBAdapter& dbPartition, const String& s
     String fDataName = dbPartition.getDBPath() + "_bulk";
 
     LOG(INFO) + "Bulk sync: download data from server: " + strDataUrl;
-    //TODO: get server from url
-    strDataUrl = "http://rhosyncnew.staging.rhohub.com/"+strDataUrl;
+    strDataUrl = getHostFromUrl(serverUrl) + strDataUrl;
 
     NetResponse( resp1, getNet().pullFile(strDataUrl, fDataName, this) );
     if ( !resp1.isOK() )
@@ -621,6 +621,28 @@ void CSyncEngine::setSyncServer(char* syncserver)
     getDB().executeSQL("DELETE FROM client_info");
 
 	logout();
+}
+
+static String getHostFromUrl( const String& strUrl )
+{
+    const char* url = strUrl.c_str();
+    const char* pStartSrv, *pEndSrv;
+    int nSrvLen;
+    const char* pHttp = strstr(url,"://");
+    if ( !pHttp )
+        pHttp = strstr(url,":\\\\");
+
+    if ( pHttp )
+        pStartSrv = pHttp+3;
+    else
+        pStartSrv = url;
+
+    pEndSrv = strchr( pStartSrv, '/');
+    if ( !pEndSrv )
+        pEndSrv = strchr( pStartSrv, '\\');
+
+    nSrvLen = pEndSrv ? (pEndSrv+1 - url) : strlen(url);
+    return String(url, nSrvLen);
 }
 
 String CSyncEngine::CSourceID::toString()const

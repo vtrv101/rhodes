@@ -165,7 +165,7 @@ public class SyncThread extends RhoThread
     public static DBAdapter getDBUserAdapter(){ return m_oDBUserAdapter; }
     public static DBAdapter getDBAppAdapter(){ return m_oDBAppAdapter; }
 
-    public static DBAdapter getDBAdapter(String szPartition){ return szPartition != null && szPartition.equals("user") ? m_oDBAppAdapter : m_oDBUserAdapter; }
+    public static DBAdapter getDBAdapter(String szPartition){ return szPartition != null && szPartition.equals("user") ? m_oDBUserAdapter : m_oDBAppAdapter; }
     //public static DBAdapter getDBAdapter(sqlite3* db);
 
     void addSyncCommand(SyncCommand oSyncCmd)

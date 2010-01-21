@@ -896,8 +896,8 @@ public class DBAdapter extends RubyBasic {
 
 			for( ; !rows2Insert.isEnd(); rows2Insert.next() )
 			{
-				int nSrcID = rows2Insert.getIntByIdx(1);
-				String name = rows2Insert.getStringByIdx(2);
+				int nSrcID = rows2Insert.getIntByIdx(0);
+				String name = rows2Insert.getStringByIdx(1);
 				m_db.getAttrMgr().add(nSrcID, name);
 			}
 			
@@ -910,15 +910,15 @@ public class DBAdapter extends RubyBasic {
 			
 			for( ; !rows2Delete.isEnd(); rows2Delete.next() )
 			{
-				int nSrcID = rows2Delete.getIntByIdx(1);
-				String attrib = rows2Delete.getStringByIdx(2);
+				int nSrcID = rows2Delete.getIntByIdx(0);
+				String attrib = rows2Delete.getStringByIdx(1);
 				m_db.getAttrMgr().remove(nSrcID, attrib);
 				
-				String attrib_type = rows2Delete.getStringByIdx(5);
+				String attrib_type = rows2Delete.getStringByIdx(4);
 				if ( !attrib_type.equals("blob.file") )
 					continue;
 
-				String url = rows2Delete.getStringByIdx(4);
+				String url = rows2Delete.getStringByIdx(3);
 				if ( url == null || url.length() == 0 )
 					continue;
 				
