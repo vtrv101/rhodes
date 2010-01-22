@@ -58,6 +58,7 @@ class CSyncSource
     int    m_nID;
     String m_strName;
     uint64 m_token;
+    String m_strSyncType;
     boolean m_bTokenFromDB;
 
     int m_nCurPageCount, m_nInserted, m_nDeleted, m_nTotalCount;
@@ -73,12 +74,14 @@ private:
     VectorPtr<CSyncBlob*> m_arSyncBlobs;
 
 public:
-    CSyncSource(int id, const String& strName, uint64 token, db::CDBAdapter& db, CSyncEngine& syncEngine );
+    CSyncSource(int id, const String& strName, uint64 token, const String& strSyncType, db::CDBAdapter& db, CSyncEngine& syncEngine );
     virtual void sync();
     virtual boolean syncClientChanges();
 
     int getID()const { return m_nID; }
     String getName() { return m_strName; }
+    String getSyncType(){ return m_strSyncType; }
+
     int getServerObjectsCount()const{ return m_nInserted+m_nDeleted; }
     boolean isSearch()const{ return m_bIsSearch;}
 

@@ -309,7 +309,7 @@ void CSyncEngine::loadAllSources()
     for ( ; !res.isEnd(); res.next() )
     { 
         String strShouldSync = res.getStringByIdx(1);
-        if ( strShouldSync.compare("none") == 0 || strShouldSync.compare("bulk_sync_only") == 0 )
+        if ( strShouldSync.compare("none") == 0 )
             continue;
 
         String strName = res.getStringByIdx(3);
@@ -317,7 +317,7 @@ void CSyncEngine::loadAllSources()
         m_bHasUserPartition = m_bHasUserPartition || strPartition.compare("user") == 0;
         m_bHasAppPartition = m_bHasAppPartition || strPartition.compare("app") == 0;
 
-        m_sources.addElement( new CSyncSource( res.getIntByIdx(0), strName, res.getUInt64ByIdx(2), 
+        m_sources.addElement( new CSyncSource( res.getIntByIdx(0), strName, res.getUInt64ByIdx(2), strShouldSync, 
             (strPartition.compare("user") == 0 ? getDB() : getAppDB()), *this) );
     }
 }
@@ -496,6 +496,9 @@ void CSyncEngine::syncAllSources()
     for( int i = getStartSource(); i < (int)m_sources.size() && isContinueSync(); i++ )
     {
         CSyncSource& src = *m_sources.elementAt(i);
+        if ( src.getSyncType().compare("bulk_sync_only")==0 )
+            continue;
+
         if ( isSessionExist() && getState() != esStop )
             src.sync();
 
