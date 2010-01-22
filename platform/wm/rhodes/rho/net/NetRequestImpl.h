@@ -72,7 +72,7 @@ public :
     CNetResponseImpl* downloadFile(common::CRhoFile& oFile);
 
     void ErrorMessage(LPCTSTR pszFunction);
-    void readInetFile( void* hRequest, CNetResponseImpl* pNetData, common::CRhoFile* pFile = NULL );
+    void readInetFile( void* hRequest, CNetResponseImpl* pNetData, common::CRhoFile* pFile = NULL, char* pBuf = NULL, DWORD dwBufSize = 0);
     void alloc_url_components(URL_COMPONENTS *uri, const wchar_t *url);
     void free_url_components(URL_COMPONENTS *uri);
     void readResponse(CNetResponseImpl* pNetData);

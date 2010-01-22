@@ -158,6 +158,8 @@ void CNetRequestImpl::readResponse(CNetResponseImpl* pNetResp)
 	}
 }
 
+static const int s_downloadBufferSize = 1024*100;
+static char s_downloadBuffer[s_downloadBufferSize];
 CNetResponseImpl* CNetRequestImpl::downloadFile(common::CRhoFile& oFile)
 {
     CNetResponseImpl* pNetResp = new CNetResponseImpl;
@@ -177,7 +179,7 @@ CNetResponseImpl* CNetRequestImpl::downloadFile(common::CRhoFile& oFile)
         if ( isError() )
             break;
 
-        readInetFile(hRequest,pNetResp, &oFile);
+        readInetFile(hRequest,pNetResp, &oFile, s_downloadBuffer, s_downloadBufferSize);
 
     }while(0);
 
@@ -302,13 +304,24 @@ CNetRequestImpl::~CNetRequestImpl()
     m_pParent->m_pCurNetRequestImpl = null;
 }
 
-void CNetRequestImpl::readInetFile( HINTERNET hRequest, CNetResponseImpl* pNetResp, common::CRhoFile* pFile /*=NULL*/ )
+void CNetRequestImpl::readInetFile( HINTERNET hRequest, CNetResponseImpl* pNetResp, common::CRhoFile* pFile /*=NULL*/,
+    char* pBuf, DWORD dwBufSize )
 {
     //if ( pNetResp->getRespCode() == 500 || pNetResp->getRespCode() == 422 )
     //    return;
+    char* pBufToFree = 0;
+    if (!pBuf)
+    {
+        if ( dwBufSize==0)
+            dwBufSize=1024*4;
 
-    DWORD dwBufSize = 4096;
-    char* pBuf = (char*)malloc(dwBufSize);
+        pBuf = (char*)malloc(dwBufSize);
+        pBufToFree = pBuf;
+    }
+
+    //DWORD dwBufSize = 1024*100;
+    //char* pBuf = (char*)malloc(dwBufSize);
+    //char* pBufToFree = pBuf;
     DWORD dwBytesRead = 0;
     BOOL bRead = FALSE;
     do
@@ -335,7 +348,8 @@ void CNetRequestImpl::readInetFile( HINTERNET hRequest, CNetResponseImpl* pNetRe
     if ( !pNetResp->isOK() )
         LOG(TRACE) + "Server response: " + pNetResp->getCharData();
 
-    free(pBuf);
+    if ( pBufToFree )
+        free(pBufToFree);
 }
 
 void CNetRequestImpl::ErrorMessage(LPCTSTR pszFunction)
