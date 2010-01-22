@@ -240,6 +240,7 @@ public class NetRequest
 					m_connection.setRequestProperty("Cookie", strSession );
 			}
 			
+			m_connection.setRequestProperty("Connection", "keep-alive");
 			m_connection.setRequestProperty("content-type", szMultipartContType);
 			m_connection.setRequestMethod(IHttpConnection.POST);
 			
@@ -350,6 +351,7 @@ public class NetRequest
 			if ( strSession != null && strSession.length() > 0 )
 				m_connection.setRequestProperty("Cookie", strSession );
 			
+			m_connection.setRequestProperty("Connection", "keep-alive");
 			m_connection.setRequestMethod(IHttpConnection.GET);
 			
 			is = m_connection.openInputStream();
