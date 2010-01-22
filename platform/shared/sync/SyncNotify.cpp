@@ -275,7 +275,7 @@ void CSyncNotify::setBulkSyncNotification(String strUrl, String strParams )//thr
 {
     String strFullUrl = getNet().resolveUrl(strUrl);
 	
-	m_bulkSyncNotify = CSyncNotification( strFullUrl, strParams, true );
+	m_bulkSyncNotify = CSyncNotification( strFullUrl, strParams, false );
 }
 
 void CSyncNotify::reportSyncStatus(String status, int error, String strDetails) {
@@ -297,7 +297,7 @@ void CSyncNotify::fireAllSyncNotifications( boolean bFinish, int nErrCode, Strin
     }
 }
 
-void CSyncNotify::fireBulkSyncNotification( boolean bFinish, int nErrCode )
+void CSyncNotify::fireBulkSyncNotification( boolean bFinish, String status, String partition, int nErrCode )
 {
     if ( getSync().getState() == CSyncEngine::esExit )
 		return;
@@ -318,11 +318,12 @@ void CSyncNotify::fireBulkSyncNotification( boolean bFinish, int nErrCode )
         
         strUrl = m_bulkSyncNotify.m_strUrl;
         strBody = "rho_callback=1";
+        strBody += "&partition=" + partition;
         strBody += "&status=";
         if ( bFinish )
         {
 	        if ( nErrCode == RhoRuby.ERR_NONE )
-	        	strBody += "ok";
+                strBody += status.length() > 0 ? status : "ok";
 	        else
 	        {
 	        	if ( getSync().isStoppedByUser() )
@@ -333,7 +334,7 @@ void CSyncNotify::fireBulkSyncNotification( boolean bFinish, int nErrCode )
 	        }
         }
         else
-        	strBody += "in_progress";
+        	strBody += status.length() > 0 ? status : "in_progress";
         
         if ( m_bulkSyncNotify.m_strParams.length() > 0 )
             strBody += "&" + m_bulkSyncNotify.m_strParams;

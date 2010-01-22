@@ -390,7 +390,6 @@ void CSyncEngine::doBulkSync(String strClientID, int nBulkSyncState)//throws Exc
         return;
 
 	LOG(INFO) + "Bulk sync: start";
-	getNotify().fireBulkSyncNotification(false, RhoRuby.ERR_NONE);
 
     if ( nBulkSyncState == 0 && m_bHasUserPartition )
     {
@@ -412,7 +411,7 @@ void CSyncEngine::doBulkSync(String strClientID, int nBulkSyncState)//throws Exc
     rho_conf_setInt("bulksync_state", 2);
     rho_conf_save();
 
-    getNotify().fireBulkSyncNotification(true, RhoRuby.ERR_NONE);        
+    getNotify().fireBulkSyncNotification(true, "", "", RhoRuby.ERR_NONE);        
 }
 
 static String getHostFromUrl( const String& strUrl );
@@ -423,6 +422,8 @@ void CSyncEngine::loadBulkPartition(db::CDBAdapter& dbPartition, const String& s
     String strQuery = "?client_id=" + strClientID + "&partition=" + strPartition;
     String strDataUrl = "", strCmd = "";
 
+  	getNotify().fireBulkSyncNotification(false, "start", strPartition, RhoRuby.ERR_NONE);
+
     while(strCmd.length() == 0&&isContinueSync())
     {	    
         NetResponse( resp, getNet().pullData(strUrl+strQuery, this) );
@@ -431,7 +432,7 @@ void CSyncEngine::loadBulkPartition(db::CDBAdapter& dbPartition, const String& s
         {
     	    LOG(ERROR) + "Bulk sync failed: server return an error.";
     	    stopSync();
-    	    getNotify().fireBulkSyncNotification(true, RhoRuby.ERR_REMOTESERVER);
+    	    getNotify().fireBulkSyncNotification(true, "", strPartition, RhoRuby.ERR_REMOTESERVER);
     	    return;
         }
 
@@ -456,8 +457,12 @@ void CSyncEngine::loadBulkPartition(db::CDBAdapter& dbPartition, const String& s
     if ( strCmd.compare("nop") == 0)
     {
 	    LOG(INFO) + "Bulk sync return no data.";
+      	getNotify().fireBulkSyncNotification(true, "", strPartition, RhoRuby.ERR_NONE);
+
 	    return;
     }
+
+   	getNotify().fireBulkSyncNotification(true, "download", strPartition, RhoRuby.ERR_NONE);
 
     String fDataName = dbPartition.getDBPath() + "_bulk";
 
@@ -469,15 +474,17 @@ void CSyncEngine::loadBulkPartition(db::CDBAdapter& dbPartition, const String& s
     {
 	    LOG(ERROR) + "Bulk sync failed: cannot download database file.";
 	    stopSync();
-	    getNotify().fireBulkSyncNotification(true, RhoRuby.ERR_REMOTESERVER);
+	    getNotify().fireBulkSyncNotification(true, "", strPartition, RhoRuby.ERR_REMOTESERVER);
 	    return;
     }
 
 	LOG(INFO) + "Bulk sync: start change db";
+   	getNotify().fireBulkSyncNotification(true, "change_db", strPartition, RhoRuby.ERR_NONE);
     
     dbPartition.setBulkSyncDB(fDataName);
 
 	LOG(INFO) + "Bulk sync: end change db";
+   	getNotify().fireBulkSyncNotification(true, "", strPartition, RhoRuby.ERR_NONE);
 }
 
 int CSyncEngine::getStartSource()

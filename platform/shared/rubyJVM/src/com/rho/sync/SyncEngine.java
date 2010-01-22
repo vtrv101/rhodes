@@ -484,7 +484,6 @@ public class SyncEngine implements NetRequest.IRhoSession
 	        return;
 
 		LOG.INFO("Bulk sync: start");
-		getNotify().fireBulkSyncNotification(false, RhoRuby.ERR_NONE);
 
 	    if ( nBulkSyncState == 0 && m_bHasUserPartition )
 	    {
@@ -506,7 +505,7 @@ public class SyncEngine implements NetRequest.IRhoSession
 		RhoConf.getInstance().setInt("bulksync_state", 2);
 		RhoConf.getInstance().saveToFile();
 
-	    getNotify().fireBulkSyncNotification(true, RhoRuby.ERR_NONE);
+	    getNotify().fireBulkSyncNotification(true, "", "", RhoRuby.ERR_NONE);
 	            
 	}
 
@@ -517,6 +516,8 @@ public class SyncEngine implements NetRequest.IRhoSession
 	    String strQuery = "?client_id=" + strClientID + "&partition=" + strPartition;
 	    String strDataUrl = "", strCmd = "";
 
+	    getNotify().fireBulkSyncNotification(false, "start", strPartition, RhoRuby.ERR_NONE);
+	    
 	    while(strCmd.length() == 0&&isContinueSync())
 	    {	    
 	        NetResponse resp = getNet().pullData(strUrl+strQuery, this);
@@ -524,7 +525,7 @@ public class SyncEngine implements NetRequest.IRhoSession
 	        {
 	    	    LOG.ERROR( "Bulk sync failed: server return an error." );
 	    	    stopSync();
-	    	    getNotify().fireBulkSyncNotification(true, RhoRuby.ERR_REMOTESERVER);
+	    	    getNotify().fireBulkSyncNotification(true, "", strPartition, RhoRuby.ERR_REMOTESERVER);
 	    	    return;
 	        }
 
@@ -550,6 +551,7 @@ public class SyncEngine implements NetRequest.IRhoSession
 	    if ( strCmd.compareTo("nop") == 0)
 	    {
 		    LOG.INFO("Bulk sync return no data.");
+		    getNotify().fireBulkSyncNotification(true, "", strPartition, RhoRuby.ERR_NONE);		    
 		    return;
 	    }
 
@@ -562,7 +564,7 @@ public class SyncEngine implements NetRequest.IRhoSession
 		    {
 			    LOG.ERROR("Bulk sync failed: cannot download database file.");
 			    stopSync();
-			    getNotify().fireBulkSyncNotification(true, RhoRuby.ERR_REMOTESERVER);
+			    getNotify().fireBulkSyncNotification(true, "", strPartition, RhoRuby.ERR_REMOTESERVER);
 			    return;
 		    }
 	    }
@@ -576,14 +578,18 @@ public class SyncEngine implements NetRequest.IRhoSession
 		    {
 			    LOG.ERROR("Bulk sync failed: cannot download database file.");
 			    stopSync();
-			    getNotify().fireBulkSyncNotification(true, RhoRuby.ERR_REMOTESERVER);
+			    getNotify().fireBulkSyncNotification(true, "", strPartition, RhoRuby.ERR_REMOTESERVER);
 			    return;
 		    }
 	    }
 	    
 		LOG.INFO("Bulk sync: start change db");
+		getNotify().fireBulkSyncNotification(true, "change_db", strPartition, RhoRuby.ERR_NONE);
+		
 	    dbPartition.setBulkSyncDB(fDataName, fScriptName);
+	    
 		LOG.INFO("Bulk sync: end change db");
+		getNotify().fireBulkSyncNotification(true, "", strPartition, RhoRuby.ERR_NONE);
 	}
 	
 	int getStartSource()

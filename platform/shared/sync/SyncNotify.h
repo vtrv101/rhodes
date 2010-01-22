@@ -79,7 +79,7 @@ public:
     void fireSyncNotification( CSyncSource* psrc, boolean bFinish, int nErrCode, String strMessage);
 
     void setBulkSyncNotification(String strUrl, String strParams );//throws Exception
-    void fireBulkSyncNotification( boolean bFinish, int nErrCode );
+    void fireBulkSyncNotification( boolean bFinish, String status, String partition, int nErrCode );
     void clearBulkSyncNotification();
 
     void cleanLastSyncObjectCount();

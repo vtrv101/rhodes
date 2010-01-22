@@ -312,7 +312,7 @@ public class SyncNotify {
 	{
 	    String strFullUrl = getNet().resolveUrl(strUrl);
 		
-		m_bulkSyncNotify = new SyncNotification( strFullUrl, strParams, true );
+		m_bulkSyncNotify = new SyncNotification( strFullUrl, strParams, false );
 	}
 	
     public void setSyncStatusListener(ISyncStatusListener listener) { m_syncStatusListener = listener; }
@@ -336,7 +336,7 @@ public class SyncNotify {
 	    }
 	}
 
-	void fireBulkSyncNotification( boolean bFinish, int nErrCode )
+	void fireBulkSyncNotification( boolean bFinish, String status, String partition, int nErrCode )
 	{
 		if ( getSync().getState() == SyncEngine.esExit )
 			return;
@@ -358,11 +358,12 @@ public class SyncNotify {
 		        
 		        strUrl = m_bulkSyncNotify.m_strUrl;
 		        strBody = "rho_callback=1";
+		        strBody += "&partition=" + partition;
 		        strBody += "&status=";
 		        if ( bFinish )
 		        {
 			        if ( nErrCode == RhoRuby.ERR_NONE )
-			        	strBody += "ok";
+			        	strBody += status.length() > 0 ? status : "ok";
 			        else
 			        {
 			        	if ( getSync().isStoppedByUser() )
@@ -373,7 +374,7 @@ public class SyncNotify {
 			        }
 		        }
 		        else
-		        	strBody += "in_progress";
+		        	strBody += status.length() > 0 ? status : "in_progress";
 		        
 		        if ( m_bulkSyncNotify.m_strParams.length() > 0 )
 		            strBody += "&" + m_bulkSyncNotify.m_strParams;
