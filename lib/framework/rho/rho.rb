@@ -386,7 +386,7 @@ module Rho
         @@sources[modelname]['name'] ||= modelname
         @@sources[modelname]['priority'] ||= 1000
         @@sources[modelname]['partition'] ||= 'user'
-        @@sources[modelname]['sync_type'] ||= 'all'
+        @@sources[modelname]['sync_type'] ||= 'incremental'
         
         if @@sources[modelname]['url'] && @@sources[modelname]['url'].length() == 0
             @@sources[modelname]['sync'] = false
