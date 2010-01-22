@@ -213,7 +213,7 @@ char* CURLNetRequest::request(const char *method, const String& strUrl, const St
     rho_net_impl_network_indicator(1);
 
     String result;
-    curl_slist *hdrs = set_curl_options(curl, method, strUrl, strBody, session, contentType, result);
+    curl_slist *hdrs = set_curl_options(curl, method, strUrl, strBody, session, !strBody.empty() ? contentType : "", result);
 	//curl_easy_perform(curl);
 	CURLMcode err = do_curl_perform(curlm, curl);
 	curl_slist_free_all(hdrs);
