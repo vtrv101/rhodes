@@ -403,7 +403,7 @@ public class SyncEngine implements NetRequest.IRhoSession
 	    for ( ; !res.isEnd(); res.next() )
 	    { 
 	        String strShouldSync = res.getStringByIdx(1);
-	        if ( strShouldSync.compareTo("none") == 0 || strShouldSync.compareTo("bulkonly") == 0 )
+	        if ( strShouldSync.compareTo("none") == 0)
 	            continue;
 
 	        String strName = res.getStringByIdx(3);
@@ -411,7 +411,7 @@ public class SyncEngine implements NetRequest.IRhoSession
 	        m_bHasUserPartition = m_bHasUserPartition || strPartition.compareTo("user") == 0;
 	        m_bHasAppPartition = m_bHasAppPartition || strPartition.compareTo("app") == 0;
 
-	        m_sources.addElement( new SyncSource( res.getIntByIdx(0), strName, res.getLongByIdx(2), 
+	        m_sources.addElement( new SyncSource( res.getIntByIdx(0), strName, res.getLongByIdx(2), strShouldSync, 
 	            (strPartition.compareTo("user") == 0 ? getDB() : getAppDB()), this) );
 	    }
 	}
@@ -423,14 +423,13 @@ public class SyncEngine implements NetRequest.IRhoSession
 		synchronized( m_mxLoadClientID )
 		{
 		    boolean bResetClient = false;
-		    int nBulkSyncState = 0;
+		    int nBulkSyncState = RhoConf.getInstance().getInt("bulksync_state");;
 		    {
-		        IDBResult res = getDB().executeSQL("SELECT client_id,reset,bulksync_state from client_info");
+		        IDBResult res = getDB().executeSQL("SELECT client_id,reset from client_info");
 		        if ( !res.isEnd() )
 		        {
 		            clientID = res.getStringByIdx(0);
 		            bResetClient = res.getIntByIdx(1) > 0;
-		            nBulkSyncState = res.getIntByIdx(2);
 		        }
 		    }
 		    
@@ -451,7 +450,6 @@ public class SyncEngine implements NetRequest.IRhoSession
 		    		getDB().executeSQL("UPDATE client_info SET reset=? where client_id=?", new Integer(0), clientID );	    	
 		    }
 
-		    //TODO:doBulkSync
 	       	doBulkSync(clientID, nBulkSyncState);		    
 		}
 		
@@ -495,7 +493,8 @@ public class SyncEngine implements NetRequest.IRhoSession
 	        if ( !isContinueSync() )
 	            return;
 
-		    getDB().executeSQL("UPDATE client_info SET bulksync_state=1 where client_id=?", strClientID );	    	
+			RhoConf.getInstance().setInt("bulksync_state", 1);
+			RhoConf.getInstance().saveToFile();
 	    }
 
 	    if ( m_bHasAppPartition )
@@ -504,7 +503,8 @@ public class SyncEngine implements NetRequest.IRhoSession
 	    if ( !isContinueSync() )
 	        return;
 
-	    getDB().executeSQL("UPDATE client_info SET bulksync_state=2 where client_id=?", strClientID );
+		RhoConf.getInstance().setInt("bulksync_state", 2);
+		RhoConf.getInstance().saveToFile();
 
 	    getNotify().fireBulkSyncNotification(true, RhoRuby.ERR_NONE);
 	            
@@ -517,7 +517,7 @@ public class SyncEngine implements NetRequest.IRhoSession
 	    String strQuery = "?client_id=" + strClientID + "&partition=" + strPartition;
 	    String strDataUrl = "", strCmd = "";
 
-	    while(strCmd.length() == 0)
+	    while(strCmd.length() == 0&&isContinueSync())
 	    {	    
 	        NetResponse resp = getNet().pullData(strUrl+strQuery, this);
 	        if ( !resp.isOK() || resp.getCharData() == null )
@@ -542,7 +542,7 @@ public class SyncEngine implements NetRequest.IRhoSession
 	            if ( nTimeout == 0 )
 	                nTimeout = 5;
 
-	            SyncThread.sleep(nTimeout*1000);
+	            SyncThread.getInstance().wait(nTimeout);
 	            strCmd = "";
 	        }
 	    }
@@ -581,9 +581,9 @@ public class SyncEngine implements NetRequest.IRhoSession
 		    }
 	    }
 	    
-		LOG.INFO("Bulk sync: change db");
-	    
+		LOG.INFO("Bulk sync: start change db");
 	    dbPartition.setBulkSyncDB(fDataName, fScriptName);
+		LOG.INFO("Bulk sync: end change db");
 	}
 	
 	int getStartSource()
@@ -607,6 +607,10 @@ public class SyncEngine implements NetRequest.IRhoSession
 	    	SyncSource src = null;
 	    	try{
 		        src = (SyncSource)m_sources.elementAt(i);
+		        
+		        if ( src.getSyncType().compareTo("bulk_sync_only")==0 )
+		            continue;
+		        
 		        if ( isSessionExist() && getState() != esStop )
 		            src.sync();
 		

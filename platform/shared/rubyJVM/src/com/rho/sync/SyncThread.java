@@ -372,6 +372,8 @@ public class SyncThread extends RhoThread
 		if ( getSyncEngine().isSyncing() )
 		{
 			getSyncEngine().stopSyncByUser();
+			getInstance().stopWait();
+			
 			int nWait = 0;
 			//while( nWait < 30000 && getSyncEngine().getState() != SyncEngine.esNone )
 			while( nWait < 30000 && getSyncEngine().getDB().isInsideTransaction() )

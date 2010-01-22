@@ -328,14 +328,14 @@ String CSyncEngine::loadClientID()
     synchronized(m_mxLoadClientID)
     {
         boolean bResetClient = false;
-        int nBulkSyncState = 0;
+        int nBulkSyncState = RHOCONF().getInt("bulksync_state");
         {
-            DBResult( res, getDB().executeSQL("SELECT client_id,reset,bulksync_state from client_info limit 1") );
+            //TODO: remove bulksync_state from schema
+            DBResult( res, getDB().executeSQL("SELECT client_id,reset from client_info limit 1") );
             if ( !res.isEnd() )
             {
                 clientID = res.getStringByIdx(0);
                 bResetClient = res.getIntByIdx(1) > 0;
-                nBulkSyncState = res.getIntByIdx(2);
             }
         }
 
@@ -386,7 +386,6 @@ String CSyncEngine::requestClientIDByNet()
 
 void CSyncEngine::doBulkSync(String strClientID, int nBulkSyncState)//throws Exception
 {
-    //TODO:doBulkSync
     if ( nBulkSyncState >= 2 || !isContinueSync() )
         return;
 
@@ -400,7 +399,8 @@ void CSyncEngine::doBulkSync(String strClientID, int nBulkSyncState)//throws Exc
         if ( !isContinueSync() )
             return;
 
-	    getDB().executeSQL("UPDATE client_info SET bulksync_state=1 where client_id=?", strClientID );	    	
+	    rho_conf_setInt("bulksync_state", 1);
+	    rho_conf_save();
     }
 
     if ( m_bHasAppPartition )
@@ -409,7 +409,8 @@ void CSyncEngine::doBulkSync(String strClientID, int nBulkSyncState)//throws Exc
     if ( !isContinueSync() )
         return;
 
-    getDB().executeSQL("UPDATE client_info SET bulksync_state=2 where client_id=?", strClientID );
+    rho_conf_setInt("bulksync_state", 2);
+    rho_conf_save();
 
     getNotify().fireBulkSyncNotification(true, RhoRuby.ERR_NONE);        
 }
@@ -422,10 +423,11 @@ void CSyncEngine::loadBulkPartition(db::CDBAdapter& dbPartition, const String& s
     String strQuery = "?client_id=" + strClientID + "&partition=" + strPartition;
     String strDataUrl = "", strCmd = "";
 
-    while(strCmd.length() == 0)
+    while(strCmd.length() == 0&&isContinueSync())
     {	    
         NetResponse( resp, getNet().pullData(strUrl+strQuery, this) );
-        if ( !resp.isOK() || resp.getCharData() == null )
+        const char* szData = resp.getCharData();
+        if ( !resp.isOK() || szData == null || *szData == 0)
         {
     	    LOG(ERROR) + "Bulk sync failed: server return an error.";
     	    stopSync();
@@ -433,9 +435,8 @@ void CSyncEngine::loadBulkPartition(db::CDBAdapter& dbPartition, const String& s
     	    return;
         }
 
-	    LOG(INFO) + "Bulk sync: got response from server: " + resp.getCharData();
+	    LOG(INFO) + "Bulk sync: got response from server: " + szData;
     	
-        const char* szData = resp.getCharData();
         CJSONEntry oJsonEntry(szData);
         strCmd = oJsonEntry.getString("result");
         if ( oJsonEntry.hasName("url") )
@@ -447,7 +448,7 @@ void CSyncEngine::loadBulkPartition(db::CDBAdapter& dbPartition, const String& s
             if ( nTimeout == 0 )
                 nTimeout = 5;
 
-            CSyncThread::getInstance()->sleep(nTimeout*1000);
+            CSyncThread::getInstance()->wait(nTimeout);
             strCmd = "";
         }
     }
@@ -472,9 +473,11 @@ void CSyncEngine::loadBulkPartition(db::CDBAdapter& dbPartition, const String& s
 	    return;
     }
 
-	LOG(INFO) + "Bulk sync: change db";
+	LOG(INFO) + "Bulk sync: start change db";
     
     dbPartition.setBulkSyncDB(fDataName);
+
+	LOG(INFO) + "Bulk sync: end change db";
 }
 
 int CSyncEngine::getStartSource()

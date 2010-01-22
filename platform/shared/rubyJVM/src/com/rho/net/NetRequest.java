@@ -379,7 +379,7 @@ public class NetRequest
 		    			else
 		    				nRead = bufferedRead(m_byteBuffer,is);*/
 		    			
-		    			nRead = is.read(m_byteBuffer);
+		    			nRead = /*bufferedReadByByte(m_byteBuffer, is);*/is.read(m_byteBuffer);
 		    			if ( nRead > 0 )
 		    				fstream.write(m_byteBuffer, 0, nRead);
 		    		}while( nRead >= 0 );
@@ -601,7 +601,7 @@ public class NetRequest
 			bytesRead += read;
 		}
 		return bytesRead;
-	}
+	}*/
 	
 	private final int bufferedReadByByte(byte[] a, InputStream in) throws IOException {
 		int bytesRead = 0;
@@ -614,7 +614,7 @@ public class NetRequest
 			bytesRead ++;
 		}
 		return bytesRead;
-	}*/
+	}
 	
 	public void closeConnection(){
 		if ( m_connection != null ){

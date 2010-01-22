@@ -60,6 +60,7 @@ class SyncSource
     Integer  m_nID;
     String m_strName;
     long m_token = 0;
+    String m_strSyncType = "";
     boolean m_bTokenFromDB; 
     
     int m_nCurPageCount, m_nInserted, m_nDeleted, m_nTotalCount, m_nAttribCounter=0;
@@ -76,6 +77,7 @@ class SyncSource
     
     Integer getID() { return m_nID; }
     String getName() { return m_strName; }
+    String getSyncType(){ return m_strSyncType; }
     int getServerObjectsCount(){ return m_nInserted+m_nDeleted; }
     boolean isSearch(){ return m_bIsSearch;}
     
@@ -107,13 +109,14 @@ class SyncSource
 	void setRefreshTime( int nRefreshTime ){ m_nRefreshTime = nRefreshTime;}
 	DBAdapter getDB(){ return m_dbAdapter; }
 	
-    SyncSource(int id, String name, long token, DBAdapter db, SyncEngine syncEngine )
+    SyncSource(int id, String name, long token, String strSyncType, DBAdapter db, SyncEngine syncEngine )
     {
     	m_syncEngine = syncEngine;
     	m_dbAdapter = db;
         m_nID = new Integer(id);
         m_strName = name;
         m_token = token;
+        m_strSyncType = strSyncType;
         m_bTokenFromDB = true;
         
         m_nCurPageCount = 0;

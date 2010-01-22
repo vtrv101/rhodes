@@ -212,13 +212,49 @@ module Rhom
                                     sql << makeCondWhere(key,value,srcid_value)
                                     sql << strLimit if strLimit
                                 end
+                                
+                                listObjs = ::Rho::RHO.get_src_db(get_source_name).execute_sql(sql)
                             else
-                                sql << "SELECT distinct object FROM object_values WHERE \n"
-                                sql << "source_id=" + srcid_value 
-                                sql << strLimit if strLimit
+                                #this is special pagination case. using DISTINCT make it very slow
+                                if strLimit
+
+                                    mapObjs = {}
+                                    arObjs = []
+                                    strLimit = " LIMIT " + limit.to_s
+                                    offset1 = 0
+                                    while(1)
+                                      
+                                        sql = "SELECT object FROM object_values WHERE \n"
+                                        sql << "source_id=" + srcid_value + strLimit
+                                        
+                                        #puts sql
+                                        tempObjs = ::Rho::RHO.get_src_db(get_source_name).execute_sql(sql)
+                                        tempObjs.each do |obj|
+                                            if !mapObjs.has_key?(obj['object'])
+                                                mapObjs[ obj['object'] ] = 1
+                                                arObjs << obj
+                                            end
+                                                
+                                            break if mapObjs.size() == limit+offset
+                                        end    
+                                        
+                                        #puts "#{mapObjs}"
+                                        if arObjs.size() == limit+offset || tempObjs.size()==0
+                                            listObjs = arObjs.slice(offset, limit)
+                                            break
+                                        else
+                                            offset1 = offset1 + limit
+                                            strLimit = " LIMIT " + limit.to_s + " OFFSET " + offset1.to_s
+                                        end
+                                    end
+                                else
+                                    sql << "SELECT distinct object FROM object_values WHERE \n"
+                                    sql << "source_id=" + srcid_value
+                                    
+                                    listObjs = ::Rho::RHO.get_src_db(get_source_name).execute_sql(sql)                                    
+                                end    
                             end
                                                 
-                            listObjs = ::Rho::RHO.get_src_db(get_source_name).execute_sql(sql)
                         end
                         puts "non-null select end : #{listObjs.length}"
                         
@@ -338,9 +374,9 @@ module Rhom
                   if args.first == :all || args.first == :first || args.first == :count
                   
                     #!args[1] || !args[1][:conditions] || 
-                    if args[1] && args[1][:conditions] && args[1][:conditions].is_a?(Hash)
+                    #if args[1] && args[1][:conditions] && args[1][:conditions].is_a?(Hash)
                         return find_bycondhash(args,&block)
-                    end
+                    #end
                   
                     where_cond = {"source_id"=>get_source_id}
                   elsif args.first.is_a?(String)
