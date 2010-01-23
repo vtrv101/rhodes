@@ -27,6 +27,8 @@ public interface SimpleFile extends IFile {
     void truncate(int nSize)throws IOException;
     InputStream getInputStream()throws IOException;
     OutputStream getOutStream();
+    OutputStream getOutStreamEx(long pos)throws IOException;    
+    long length();
     
     /**
      * 

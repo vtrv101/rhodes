@@ -50,9 +50,7 @@ public class NetRequest
 	    		break;
 	    	}catch(IOException exc)
 	    	{
-	    		if ( m_bCancel )
-	    			break;
-	    		if ( nTry+1 >= MAX_NETREQUEST_RETRY )
+	    		if ( m_bCancel || nTry+1 >= MAX_NETREQUEST_RETRY )
 	    			throw exc;
 	    	}
 	        nTry++;
@@ -71,7 +69,7 @@ public class NetRequest
 		
 		try{
 			closeConnection();
-			m_connection = RhoClassFactory.getNetworkAccess().connect(strUrl);
+			m_connection = RhoClassFactory.getNetworkAccess().connect(strUrl, false);
 			
 			if ( oSession != null )
 			{
@@ -94,6 +92,7 @@ public class NetRequest
 				m_connection.setRequestMethod(IHttpConnection.POST);
 				os = m_connection.openOutputStream();
 				os.write(strBody.getBytes(), 0, strBody.length());
+				os.flush();
 			}else
 				m_connection.setRequestMethod(IHttpConnection.GET);
 			
@@ -168,8 +167,12 @@ public class NetRequest
     		if ( resp.isOK() )
     		{
     			ParsedCookie cookie = makeCookie(m_connection);
-    			resp.setCharData(cookie.strAuth + ";" + cookie.strSession + ";");
-    			LOG.INFO("pullCookies: " + resp.getCharData() );
+    			if ( cookie.strAuth.length() > 0 || cookie.strSession.length() >0 )
+    				resp.setCharData(cookie.strAuth + ";" + cookie.strSession + ";");
+    			else
+    				resp.setCharData("");
+    				
+				LOG.INFO("pullCookies: " + resp.getCharData() );
     		}
 		}finally
 		{
@@ -231,7 +234,7 @@ public class NetRequest
 		
 		try{
 			closeConnection();
-			m_connection = RhoClassFactory.getNetworkAccess().connect(strUrl);
+			m_connection = RhoClassFactory.getNetworkAccess().connect(strUrl, false);
 			
 			if ( oSession != null )
 			{
@@ -303,28 +306,45 @@ public class NetRequest
 		return new NetResponse(strRespBody != null ? strRespBody : "", code );
     }
 	
+	long m_nMaxPacketSize = 0;
+	int m_nCurDownloadSize = 0;
 	public NetResponse pullFile( String strUrl, String strFileName, IRhoSession oSession )throws Exception
 	{
 		SimpleFile file = null;
 		OutputStream fstream = null;
 		NetResponse resp = null;
+		
+		m_nMaxPacketSize = RhoClassFactory.getNetworkAccess().getMaxPacketSize(); 
 		try{
-			file = RhoClassFactory.createFile();
-			file.open(strFileName, false, true);
-			fstream = file.getOutStream();
 			
-			int nTry = 0;
+			int nFailTry = 0;
 			do{
+
+				if ( fstream != null )
+					try{ fstream.close();}catch(IOException e){}
+				
+				if ( file != null )
+					try{ file.close(); }catch(IOException e){}
+				
+				fstream = null;
+				file = null;
+				
+				file = RhoClassFactory.createFile();
+				file.open(strFileName, false, true);
+				fstream = file.getOutStreamEx(file.length());
+				
 				try{
-					resp = pullFile1( strUrl, fstream, oSession );
-					break;
+					resp = pullFile1( strUrl, fstream, file.length(), oSession );
+					//break;
 				}catch(IOException e)
 				{
-		    		if ( nTry+1 >= MAX_NETREQUEST_RETRY )
+		    		if ( m_bCancel || nFailTry+1 >= MAX_NETREQUEST_RETRY )
 		    			throw e;
+		    		
+		    		nFailTry++;
+		    		m_nCurDownloadSize = 1;
 		    	}
-		        nTry++;
-			}while( true );
+			}while( !m_bCancel && resp.isOK() && m_nCurDownloadSize > 0 && m_nMaxPacketSize > 0 );
 			
 		}finally{
 			if ( fstream != null )
@@ -334,10 +354,11 @@ public class NetRequest
 				try{ file.close(); }catch(IOException e){}
 		}
 		
-		return resp;
+		return resp != null && !m_bCancel ? resp : new NetResponse("", IHttpConnection.HTTP_INTERNAL_ERROR );
 	}
 	
-	NetResponse pullFile1( String strUrl, OutputStream fstream, IRhoSession oSession )throws Exception
+	static byte[]  m_byteDownloadBuffer = new byte[1024*20]; 
+	NetResponse pullFile1( String strUrl, OutputStream fstream, long nStartPos, IRhoSession oSession )throws Exception
 	{
 		String strRespBody = null;
 		InputStream is = null;
@@ -345,50 +366,61 @@ public class NetRequest
 		
 		try{
 			closeConnection();
-			m_connection = RhoClassFactory.getNetworkAccess().connect(strUrl);
+			m_connection = RhoClassFactory.getNetworkAccess().connect(strUrl, true);
 			
 			String strSession = oSession.getSession();
 			if ( strSession != null && strSession.length() > 0 )
 				m_connection.setRequestProperty("Cookie", strSession );
 			
 			m_connection.setRequestProperty("Connection", "keep-alive");
+			
+			if ( nStartPos > 0 || m_nMaxPacketSize > 0 )
+			{
+				if ( m_nMaxPacketSize > 0 )
+					m_connection.setRequestProperty("Range", "bytes="+nStartPos+"-" + (nStartPos + m_nMaxPacketSize));
+				else
+					m_connection.setRequestProperty("Range", "bytes="+nStartPos+"-");
+			}
+			
 			m_connection.setRequestMethod(IHttpConnection.GET);
 			
-			is = m_connection.openInputStream();
 			code = m_connection.getResponseCode();
 			
 			LOG.INFO("getResponseCode : " + code);
 			
-			if (code != IHttpConnection.HTTP_OK) 
+			m_nCurDownloadSize = 0;
+			
+			if ( code == IHttpConnection.HTTP_RANGENOTSATISFY )
+				code = IHttpConnection.HTTP_PARTIAL_CONTENT;
+			else
 			{
-				LOG.ERROR("Error retrieving data: " + code);
-				if (code == IHttpConnection.HTTP_UNAUTHORIZED) 
-					oSession.logout();
-				
-				if ( code != IHttpConnection.HTTP_INTERNAL_ERROR )
-					strRespBody = readFully(is);
-			}else
-			{
-				//long len = connection.getLength();
-				//LOG.INFO("pullFile data size:" + len );
-				//int nAvail = is.available();
-				//boolean bReadByBytes = RhoClassFactory.createRhoRubyHelper().isSimulator();	
-				synchronized (m_byteBuffer) {			
+				if (code != IHttpConnection.HTTP_OK && code != IHttpConnection.HTTP_PARTIAL_CONTENT ) 
+				{
+					LOG.ERROR("Error retrieving data: " + code);
+					if (code == IHttpConnection.HTTP_UNAUTHORIZED) 
+						oSession.logout();
+					
+					if ( code != IHttpConnection.HTTP_INTERNAL_ERROR )
+					{
+						is = m_connection.openInputStream();
+						strRespBody = readFully(is);
+					}
+				}else
+				{
 					int nRead = 0;
+					
+					is = m_connection.openInputStream();
+					
 		    		do{
-/*		    			if ( bReadByBytes )
-		    				nRead = bufferedReadByByte(m_byteBuffer,is);
-		    			else
-		    				nRead = bufferedRead(m_byteBuffer,is);*/
-		    			
-		    			nRead = /*bufferedReadByByte(m_byteBuffer, is);*/is.read(m_byteBuffer);
+		    			nRead = /*bufferedReadByByte(m_byteBuffer, is);*/is.read(m_byteDownloadBuffer);
 		    			if ( nRead > 0 )
-		    				fstream.write(m_byteBuffer, 0, nRead);
-		    		}while( nRead >= 0 );
+		    			{
+		    				fstream.write(m_byteDownloadBuffer, 0, nRead);
+		    				m_nCurDownloadSize += nRead;
+		    			}
+		    		}while( !m_bCancel && nRead >= 0 );
 				}
-				
 			}
-
 		}finally
 		{
 			if ( is != null )
@@ -522,7 +554,7 @@ public class NetRequest
 		
 	}*/
 	
-	private static ParsedCookie makeCookie(IHttpConnection connection)
+	private ParsedCookie makeCookie(IHttpConnection connection)
 			throws IOException {
 		ParsedCookie cookie = new ParsedCookie();
 

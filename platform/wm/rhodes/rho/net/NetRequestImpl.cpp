@@ -138,7 +138,7 @@ void CNetRequestImpl::readResponse(CNetResponseImpl* pNetResp)
     int nCode = _wtoi(szHttpRes);
     pNetResp->setResponseCode(nCode);
 
-    if ( nCode != 200 )
+    if ( nCode != 200 && nCode != 206 )
     {
         LOG(ERROR) + "An error occured connecting to the sync source: " + szHttpRes + " returned.";
 
@@ -168,6 +168,21 @@ CNetResponseImpl* CNetRequestImpl::downloadFile(common::CRhoFile& oFile)
     {
         if ( isError() )
             break;
+
+        //if ( oFile.size() > 0 )
+        {
+            CAtlStringW strHeaders = L"Range: bytes=";
+            strHeaders += common::convertToStringW(oFile.size()).c_str();
+            strHeaders += L"-";
+            //strHeaders += common::convertToStringW(oFile.size()+30068032).c_str();
+            strHeaders += "\r\n";
+
+            if ( !HttpAddRequestHeaders( hRequest, strHeaders, -1, HTTP_ADDREQ_FLAG_ADD|HTTP_ADDREQ_FLAG_REPLACE ) )
+            {
+                pszErrFunction = L"HttpAddRequestHeaders";
+                break;
+            }
+        }
 
         if ( !HttpSendRequest( hRequest, NULL, 0, NULL, 0 ) )
         {
@@ -282,8 +297,6 @@ void CNetRequestImpl::close()
 	if (pszErrFunction)
 		ErrorMessage(pszErrFunction);
 
-    free_url_components(&uri);
-
 	if ( hRequest ) 
         InternetCloseHandle(hRequest);
 	if ( hConnection ) 
@@ -291,6 +304,7 @@ void CNetRequestImpl::close()
 	if ( hInet ) 
         InternetCloseHandle(hInet);
 
+    free_url_components(&uri);
     memset(&uri, 0, sizeof(uri));
 
     hRequest = 0;
@@ -330,6 +344,7 @@ void CNetRequestImpl::readInetFile( HINTERNET hRequest, CNetResponseImpl* pNetRe
         if ( !bRead )
         {
             pszErrFunction = L"InternetReadFile";
+            pNetResp->setResponseCode(408);
             break;
         }
 
@@ -369,16 +384,15 @@ void CNetRequestImpl::ErrorMessage(LPCTSTR pszFunction)
         (LPTSTR)&pszMessage,
         0, NULL );
 
-    CAtlStringW strExtError = L"";
+    wchar_t* szExtError = 0;
     if ( dwLastError == ERROR_INTERNET_EXTENDED_ERROR )
     {
         DWORD  dwInetError =0, dwExtLength = 0;
         InternetGetLastResponseInfo( &dwInetError, NULL, &dwExtLength );
-
         if ( dwExtLength > 0 )
         {
-            InternetGetLastResponseInfo( &dwInetError, strExtError.GetBuffer(dwExtLength+1), &dwExtLength );
-            strExtError.ReleaseBuffer();
+            szExtError = (wchar_t*)malloc(sizeof(wchar_t)*(dwExtLength+1));
+            InternetGetLastResponseInfo( &dwInetError, szExtError, &dwExtLength );
         }
     }
 
@@ -387,9 +401,11 @@ void CNetRequestImpl::ErrorMessage(LPCTSTR pszFunction)
 
     if ( pszMessage ) 
         oLogMsg + ".Message: " + pszMessage;
-    if ( strExtError.GetLength() )
-        oLogMsg + ".Extended info: " + strExtError.GetString();
+    if ( szExtError && *szExtError )
+        oLogMsg + ".Extended info: " + szExtError;
 
+    if ( szExtError )
+        free(szExtError);
     if ( pszMessage )
         LocalFree(pszMessage);
 }

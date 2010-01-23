@@ -78,7 +78,7 @@ INetResponse* CNetRequest::pushFile(const String& strUrl, const String& strBody,
 INetResponse* CNetRequest::pullFile(const String& strUrl, const String& strFilePath, IRhoSession* oSession)
 {
     common::CRhoFile oFile;
-    if ( !oFile.open(strFilePath.c_str(),common::CRhoFile::OpenForWrite) ) 
+    if ( !oFile.open(strFilePath.c_str(),common::CRhoFile::OpenForAppend) ) 
     {
         LOG(ERROR) + "pullFile: cannot create file :" + strFilePath;
         return new CNetResponseImpl();

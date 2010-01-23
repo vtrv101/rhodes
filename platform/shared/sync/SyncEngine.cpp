@@ -10,6 +10,8 @@
 #include "statistic/RhoProfiler.h"
 #include "ruby/ext/rho/rhoruby.h"
 #include "common/RhoTime.h"
+#include "common/RhoFilePath.h"
+#include "common/RhoFile.h"
 #include "SyncProtocol_3.h"
 
 namespace rho {
@@ -398,8 +400,7 @@ void CSyncEngine::doBulkSync(String strClientID, int nBulkSyncState)//throws Exc
         if ( !isContinueSync() )
             return;
 
-	    rho_conf_setInt("bulksync_state", 1);
-	    rho_conf_save();
+	    RHOCONF().setInt("bulksync_state", 1, true);
     }
 
     if ( m_bHasAppPartition )
@@ -408,8 +409,7 @@ void CSyncEngine::doBulkSync(String strClientID, int nBulkSyncState)//throws Exc
     if ( !isContinueSync() )
         return;
 
-    rho_conf_setInt("bulksync_state", 2);
-    rho_conf_save();
+    RHOCONF().setInt("bulksync_state", 2, true);
 
     getNotify().fireBulkSyncNotification(true, "", "", RhoRuby.ERR_NONE);        
 }
@@ -464,18 +464,18 @@ void CSyncEngine::loadBulkPartition(db::CDBAdapter& dbPartition, const String& s
 
    	getNotify().fireBulkSyncNotification(true, "download", strPartition, RhoRuby.ERR_NONE);
 
-    String fDataName = dbPartition.getDBPath() + "_bulk";
-
-    LOG(INFO) + "Bulk sync: download data from server: " + strDataUrl;
-    strDataUrl = getHostFromUrl(serverUrl) + strDataUrl;
-
-    NetResponse( resp1, getNet().pullFile(strDataUrl, fDataName, this) );
-    if ( !resp1.isOK() )
+    String fDataName = makeBulkDataFileName(strDataUrl, dbPartition.getDBPath(), "_bulk");
+    String strSqlDataUrl = getHostFromUrl(serverUrl) + strDataUrl;
+    LOG(INFO) + "Bulk sync: download data from server: " + strSqlDataUrl;
     {
-	    LOG(ERROR) + "Bulk sync failed: cannot download database file.";
-	    stopSync();
-	    getNotify().fireBulkSyncNotification(true, "", strPartition, RhoRuby.ERR_REMOTESERVER);
-	    return;
+        NetResponse( resp1, getNet().pullFile(strSqlDataUrl, fDataName, this) );
+        if ( !resp1.isOK() )
+        {
+	        LOG(ERROR) + "Bulk sync failed: cannot download database file.";
+	        stopSync();
+	        getNotify().fireBulkSyncNotification(true, "", strPartition, RhoRuby.ERR_REMOTESERVER);
+	        return;
+        }
     }
 
 	LOG(INFO) + "Bulk sync: start change db";
@@ -485,6 +485,26 @@ void CSyncEngine::loadBulkPartition(db::CDBAdapter& dbPartition, const String& s
 
 	LOG(INFO) + "Bulk sync: end change db";
    	getNotify().fireBulkSyncNotification(true, "", strPartition, RhoRuby.ERR_NONE);
+}
+
+String CSyncEngine::makeBulkDataFileName(String strDataUrl, String strDbPath, String strExt)
+{
+    CFilePath oUrlPath(strDataUrl);
+    String strNewName = oUrlPath.getBaseName();
+    String strOldName = RHOCONF().getString("bulksync_filename");
+    if ( strOldName.length() > 0 && strNewName.compare(strOldName) != 0 )
+    {
+        CFilePath oFilePath(strDbPath);
+        String strFToDelete = oFilePath.changeBaseName(strOldName+strExt);
+        LOG(INFO) + "Bulk sync: remove old bulk file '" + strFToDelete + "'";
+
+        CRhoFile::deleteFile( strFToDelete.c_str() );
+    }
+
+    RHOCONF().setString("bulksync_filename", strNewName, true);
+
+    CFilePath oFilePath(strDbPath);
+    return oFilePath.changeBaseName(strNewName+strExt);
 }
 
 int CSyncEngine::getStartSource()

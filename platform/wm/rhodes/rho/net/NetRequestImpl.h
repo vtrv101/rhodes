@@ -40,7 +40,7 @@ public:
 
 	boolean isOK()
 	{
-		return m_nRespCode == 200;
+		return m_nRespCode == 200 || m_nRespCode == 206;
 	}
 
     boolean isUnathorized()

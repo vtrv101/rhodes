@@ -136,6 +136,9 @@ public class SyncEngine implements NetRequest.IRhoSession
         {
             m_clientID = loadClientID();
             getNotify().cleanLastSyncObjectCount();
+            
+		    int nBulkSyncState = RhoConf.getInstance().getInt("bulksync_state");;
+	       	doBulkSync(m_clientID, nBulkSyncState);		    
         }
         else
         {
@@ -423,7 +426,6 @@ public class SyncEngine implements NetRequest.IRhoSession
 		synchronized( m_mxLoadClientID )
 		{
 		    boolean bResetClient = false;
-		    int nBulkSyncState = RhoConf.getInstance().getInt("bulksync_state");;
 		    {
 		        IDBResult res = getDB().executeSQL("SELECT client_id,reset from client_info");
 		        if ( !res.isEnd() )
@@ -449,8 +451,6 @@ public class SyncEngine implements NetRequest.IRhoSession
 		    	else
 		    		getDB().executeSQL("UPDATE client_info SET reset=? where client_id=?", new Integer(0), clientID );	    	
 		    }
-
-	       	doBulkSync(clientID, nBulkSyncState);		    
 		}
 		
 		return clientID;
@@ -492,8 +492,7 @@ public class SyncEngine implements NetRequest.IRhoSession
 	        if ( !isContinueSync() )
 	            return;
 
-			RhoConf.getInstance().setInt("bulksync_state", 1);
-			RhoConf.getInstance().saveToFile();
+			RhoConf.getInstance().setInt("bulksync_state", 1, true);
 	    }
 
 	    if ( m_bHasAppPartition )
@@ -502,8 +501,7 @@ public class SyncEngine implements NetRequest.IRhoSession
 	    if ( !isContinueSync() )
 	        return;
 
-		RhoConf.getInstance().setInt("bulksync_state", 2);
-		RhoConf.getInstance().saveToFile();
+		RhoConf.getInstance().setInt("bulksync_state", 2, true);
 
 	    getNotify().fireBulkSyncNotification(true, "", "", RhoRuby.ERR_NONE);
 	            
@@ -555,7 +553,7 @@ public class SyncEngine implements NetRequest.IRhoSession
 		    return;
 	    }
 
-	    String fDataName = dbPartition.getDBPath() + "_bulk.data";
+	    String fDataName = makeBulkDataFileName(strDataUrl, dbPartition.getDBPath(), "_bulk.data");
 	    String strHsqlDataUrl = getHostFromUrl(serverUrl) + strDataUrl + ".hsqldb.data";
 	    LOG.INFO("Bulk sync: download data from server: " + strHsqlDataUrl);
 	    {
@@ -569,7 +567,7 @@ public class SyncEngine implements NetRequest.IRhoSession
 		    }
 	    }
 	    
-	    String fScriptName = dbPartition.getDBPath() + "_bulk.script";
+	    String fScriptName = makeBulkDataFileName(strDataUrl, dbPartition.getDBPath(), "_bulk.script" );
 	    String strHsqlScriptUrl = getHostFromUrl(serverUrl) + strDataUrl + ".hsqldb.script";
 	    LOG.INFO("Bulk sync: download script from server: " + strHsqlScriptUrl);
 	    {
@@ -590,6 +588,27 @@ public class SyncEngine implements NetRequest.IRhoSession
 	    
 		LOG.INFO("Bulk sync: end change db");
 		getNotify().fireBulkSyncNotification(true, "", strPartition, RhoRuby.ERR_NONE);
+	}
+	
+	String makeBulkDataFileName(String strDataUrl, String strDbPath, String strExt)throws Exception
+	{
+	    FilePath oUrlPath = new FilePath(strDataUrl);
+	    String strNewName = oUrlPath.getBaseName();
+	    String strOldName = RhoConf.getInstance().getString("bulksync_filename");
+	    if ( strOldName.length() > 0 && strNewName.compareTo(strOldName) != 0 )
+	    {
+	        FilePath oFilePath = new FilePath(strDbPath);
+	        String strFToDelete = oFilePath.changeBaseName(strOldName+strExt);
+	        LOG.INFO( "Bulk sync: remove old bulk file '" + strFToDelete + "'" );
+
+	        //RhoFile.deleteFile( strFToDelete.c_str() );
+	        RhoClassFactory.createFile().delete(strFToDelete);	        
+	    }
+
+	    RhoConf.getInstance().setString("bulksync_filename", strNewName, true);
+
+	    FilePath oFilePath = new FilePath(strDbPath);
+	    return oFilePath.changeBaseName(strNewName+strExt);
 	}
 	
 	int getStartSource()

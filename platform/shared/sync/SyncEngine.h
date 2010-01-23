@@ -131,6 +131,7 @@ private:
     void callLoginCallback(String callback, int nErrCode, String strMessage);
 
     void loadBulkPartition(db::CDBAdapter& dbPartition, const String& strPartition, const String& strClientID );
+    String makeBulkDataFileName(String strDataUrl, String strDbPath, String strExt);
 
     void initProtocol();
 
