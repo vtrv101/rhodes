@@ -47,9 +47,10 @@ def startsim
   args << "/no-compact-filesystem"
     
   if $bbver !~ /^4\.[012](\..*)?$/
+    args << "/sdcard-inserted=true"
     args << "/fs-sdcard=true"
   end
-        
+  
   args << "\"/app-param=JvmDebugFile:"+Jake.get_absolute($app_config["applog"]) +'"'
 
   Thread.new { Jake.run(command,args,jde + "/simulator",true) }
