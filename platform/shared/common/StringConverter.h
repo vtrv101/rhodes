@@ -91,6 +91,7 @@ template<> inline String convertToStringA<Type>( const Type& value )\
     return String(buf);\
 }
 
+#if defined(OS_WINDOWS) || defined (OS_WINCE)
 CONVERT_TYPE_W( unsigned int, L"%u" );
 CONVERT_TYPE_W( int, L"%d" );
 CONVERT_TYPE_W( unsigned long, L"%lu" );
@@ -103,7 +104,7 @@ CONVERT_TYPE_W( short, L"%hd" );
 CONVERT_TYPE_W( bool, L"%d" );
 CONVERT_TYPE_W( float, L"%f" );
 CONVERT_TYPE_W( double, L"%lf" );
-
+#endif
 CONVERT_TYPE_A( unsigned int, "%u" );
 CONVERT_TYPE_A( int, "%d" );
 CONVERT_TYPE_A( unsigned long, "%lu" );
