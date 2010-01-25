@@ -52,7 +52,7 @@ import com.rho.RhoMainScreen;
 import com.rho.RhoProfiler;
 import com.rho.RhoRuby;
 import com.rho.RhoThread;
-import com.rho.SimpleFile;
+import com.rho.file.SimpleFile;
 import com.rho.Version;
 //import com.rho.db.DBAdapter;
 import com.rho.location.GeoLocation;
@@ -60,7 +60,7 @@ import com.rho.net.RhoConnection;
 import com.rho.net.URI;
 import com.rho.sync.SyncThread;
 import com.rho.sync.ISyncStatusListener;
-import com.rho.Jsr75File;
+import com.rho.file.Jsr75File;
 
 /**
  *

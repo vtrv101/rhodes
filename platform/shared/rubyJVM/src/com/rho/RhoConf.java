@@ -12,6 +12,8 @@ import com.xruby.runtime.lang.RubyNoArgMethod;
 import com.xruby.runtime.lang.RubyTwoArgMethod;
 import com.xruby.runtime.lang.RubyValue;
 
+import com.rho.file.SimpleFile;
+
 public class RhoConf {
     String      m_strConfFilePath = "";
     String      m_strRhoRootPath = "";

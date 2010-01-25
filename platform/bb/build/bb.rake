@@ -287,7 +287,7 @@ namespace "build" do
         # class names which implements Persistable interface. See details here -
         # http://supportforums.blackberry.com/rim/board/message?board.id=java_dev&thread.id=11152
         mkdir_p vsrcdir + "/com/rho/file"
-        cp_r $builddir + "/../hsqldb/src/com/rho/file/PersistRAFileImpl.java", vsrcdir + "/com/rho/file"
+        cp_r $builddir + "/../rhodes/src/com/rho/file/PersistRAFileImpl.java", vsrcdir + "/com/rho/file"
         freplace( vsrcdir + "/com/rho/file/PersistRAFileImpl.java", /FileInfoWrapper/, $outfilebase + "_FileInfoWrapper" )
         freplace( vsrcdir + "/com/rho/file/PersistRAFileImpl.java", /PageWrapper/, $outfilebase + "_PageWrapper" )
 
@@ -586,7 +586,7 @@ namespace "run" do
   end
   
   desc "Builds everything, loads and starts bb sim and mds"
-  task :bb => ["run:bb:stopmdsandsim", "package:bb:production"] do
+  task :bb => ["run:bb:stopmdsandsim", "package:bb:dev"] do
     #sim = $config["env"]["paths"][$bbver]["sim"]
     jde = $config["env"]["paths"][$bbver]["jde"]
     

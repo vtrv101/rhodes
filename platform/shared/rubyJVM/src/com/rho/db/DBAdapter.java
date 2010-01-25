@@ -3,6 +3,7 @@ package com.rho.db;
 import com.xruby.runtime.builtin.*;
 import com.xruby.runtime.lang.*;
 import com.rho.*;
+import com.rho.file.*;
 import java.util.Vector;
 
 public class DBAdapter extends RubyBasic {

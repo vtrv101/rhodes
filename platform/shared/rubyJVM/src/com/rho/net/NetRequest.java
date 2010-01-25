@@ -10,7 +10,7 @@ import com.rho.RhoClassFactory;
 //import com.rho.RhoConf;
 import com.rho.RhoEmptyLogger;
 import com.rho.RhoLogger;
-import com.rho.SimpleFile;
+import com.rho.file.SimpleFile;
 import com.rho.Tokenizer;
 
 public class NetRequest

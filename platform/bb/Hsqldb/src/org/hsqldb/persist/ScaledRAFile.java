@@ -37,7 +37,7 @@ import java.io.IOException;
 
 import com.rho.RhoEmptyProfiler;
 import com.rho.RhoProfiler;
-import com.rho.db.RandomAccessFile;
+import com.rho.file.RandomAccessFile;
 //import java.lang.reflect.Constructor;
 
 import org.hsqldb.Database;

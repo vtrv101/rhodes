@@ -3,6 +3,7 @@ package com.rho;
 import com.rho.db.IDBStorage;
 import com.xruby.runtime.builtin.RubyArray;
 import com.xruby.runtime.lang.RubyProgram;
+import com.rho.file.*;
 
 public interface IRhoRubyHelper {
 	public abstract void initRubyExtensions();
