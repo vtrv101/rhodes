@@ -484,7 +484,8 @@ public class SyncEngine implements NetRequest.IRhoSession
 	        return;
 
 		LOG.INFO("Bulk sync: start");
-
+		getNotify().fireBulkSyncNotification(false, "start", "", RhoRuby.ERR_NONE);
+		
 	    if ( nBulkSyncState == 0 && m_bHasUserPartition )
 	    {
 	        loadBulkPartition(getDB(), "user", strClientID);
@@ -553,6 +554,8 @@ public class SyncEngine implements NetRequest.IRhoSession
 		    return;
 	    }
 
+	    getNotify().fireBulkSyncNotification(false, "download", strPartition, RhoRuby.ERR_NONE);
+	    
 	    String fDataName = makeBulkDataFileName(strDataUrl, dbPartition.getDBPath(), "_bulk.data");
 	    String strHsqlDataUrl = getHostFromUrl(serverUrl) + strDataUrl + ".hsqldb.data";
 	    LOG.INFO("Bulk sync: download data from server: " + strHsqlDataUrl);
@@ -582,12 +585,12 @@ public class SyncEngine implements NetRequest.IRhoSession
 	    }
 	    
 		LOG.INFO("Bulk sync: start change db");
-		getNotify().fireBulkSyncNotification(true, "change_db", strPartition, RhoRuby.ERR_NONE);
+		getNotify().fireBulkSyncNotification(false, "change_db", strPartition, RhoRuby.ERR_NONE);
 		
 	    dbPartition.setBulkSyncDB(fDataName, fScriptName);
 	    
 		LOG.INFO("Bulk sync: end change db");
-		getNotify().fireBulkSyncNotification(true, "", strPartition, RhoRuby.ERR_NONE);
+		getNotify().fireBulkSyncNotification(false, "", strPartition, RhoRuby.ERR_NONE);
 	}
 	
 	String makeBulkDataFileName(String strDataUrl, String strDbPath, String strExt)throws Exception

@@ -138,7 +138,7 @@ void CNetRequestImpl::readResponse(CNetResponseImpl* pNetResp)
     int nCode = _wtoi(szHttpRes);
     pNetResp->setResponseCode(nCode);
 
-    if ( nCode != 200 && nCode != 206 )
+    if ( nCode != 200 && nCode != 206 && nCode != 416 )
     {
         LOG(ERROR) + "An error occured connecting to the sync source: " + szHttpRes + " returned.";
 
@@ -193,6 +193,12 @@ CNetResponseImpl* CNetRequestImpl::downloadFile(common::CRhoFile& oFile)
         readResponse(pNetResp);
         if ( isError() )
             break;
+
+        if ( pNetResp->getResponseCode() == 416 )
+        {
+            pNetResp->setResponseCode(206);
+            break;
+        }
 
         readInetFile(hRequest,pNetResp, &oFile, s_downloadBuffer, s_downloadBufferSize);
 

@@ -392,6 +392,7 @@ void CSyncEngine::doBulkSync(String strClientID, int nBulkSyncState)//throws Exc
         return;
 
 	LOG(INFO) + "Bulk sync: start";
+    getNotify().fireBulkSyncNotification(false, "start", "", RhoRuby.ERR_NONE);        
 
     if ( nBulkSyncState == 0 && m_bHasUserPartition )
     {
@@ -462,7 +463,7 @@ void CSyncEngine::loadBulkPartition(db::CDBAdapter& dbPartition, const String& s
 	    return;
     }
 
-   	getNotify().fireBulkSyncNotification(true, "download", strPartition, RhoRuby.ERR_NONE);
+   	getNotify().fireBulkSyncNotification(false, "download", strPartition, RhoRuby.ERR_NONE);
 
     String fDataName = makeBulkDataFileName(strDataUrl, dbPartition.getDBPath(), "_bulk");
     String strSqlDataUrl = getHostFromUrl(serverUrl) + strDataUrl;
@@ -479,12 +480,12 @@ void CSyncEngine::loadBulkPartition(db::CDBAdapter& dbPartition, const String& s
     }
 
 	LOG(INFO) + "Bulk sync: start change db";
-   	getNotify().fireBulkSyncNotification(true, "change_db", strPartition, RhoRuby.ERR_NONE);
+   	getNotify().fireBulkSyncNotification(false, "change_db", strPartition, RhoRuby.ERR_NONE);
     
     dbPartition.setBulkSyncDB(fDataName);
 
 	LOG(INFO) + "Bulk sync: end change db";
-   	getNotify().fireBulkSyncNotification(true, "", strPartition, RhoRuby.ERR_NONE);
+   	getNotify().fireBulkSyncNotification(false, "", strPartition, RhoRuby.ERR_NONE);
 }
 
 String CSyncEngine::makeBulkDataFileName(String strDataUrl, String strDbPath, String strExt)

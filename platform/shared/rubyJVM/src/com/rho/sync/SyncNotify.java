@@ -359,11 +359,12 @@ public class SyncNotify {
 		        strUrl = m_bulkSyncNotify.m_strUrl;
 		        strBody = "rho_callback=1";
 		        strBody += "&partition=" + partition;
+		        strBody += "&bulk_status="+status;
 		        strBody += "&status=";
 		        if ( bFinish )
 		        {
 			        if ( nErrCode == RhoRuby.ERR_NONE )
-			        	strBody += status.length() > 0 ? status : "ok";
+			        	strBody += "ok";
 			        else
 			        {
 			        	if ( getSync().isStoppedByUser() )
@@ -374,7 +375,7 @@ public class SyncNotify {
 			        }
 		        }
 		        else
-		        	strBody += status.length() > 0 ? status : "in_progress";
+		        	strBody += "in_progress";
 		        
 		        if ( m_bulkSyncNotify.m_strParams.length() > 0 )
 		            strBody += "&" + m_bulkSyncNotify.m_strParams;

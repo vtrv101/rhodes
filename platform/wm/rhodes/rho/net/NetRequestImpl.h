@@ -34,6 +34,7 @@ public:
     String& getRawData(){ return m_data; }
 
     boolean isResponseRecieved(){ return m_nRespCode!=-1;}
+    int getResponseCode(){ return m_nRespCode;}
     void setResponseCode(int nRespCode){ m_nRespCode = nRespCode;}
 
     int getRespCode(){ return m_nRespCode;}
