@@ -10,7 +10,7 @@ import com.rho.RhoClassFactory;
 //import com.rho.RhoConf;
 import com.rho.RhoEmptyLogger;
 import com.rho.RhoLogger;
-import com.rho.file.SimpleFile;
+import com.rho.file.*;
 import com.rho.Tokenizer;
 
 public class NetRequest
@@ -310,32 +310,21 @@ public class NetRequest
 	int m_nCurDownloadSize = 0;
 	public NetResponse pullFile( String strUrl, String strFileName, IRhoSession oSession )throws Exception
 	{
-		SimpleFile file = null;
-		OutputStream fstream = null;
+		IRAFile file = null;
 		NetResponse resp = null;
 		
 		m_nMaxPacketSize = RhoClassFactory.getNetworkAccess().getMaxPacketSize(); 
 		try{
+
+			file = RhoClassFactory.createRAFile();
+			file.open(strFileName, "rw");
+			file.seek(file.size());
 			
 			int nFailTry = 0;
 			do{
 
-				if ( fstream != null )
-					try{ fstream.close();}catch(IOException e){}
-				
-				if ( file != null )
-					try{ file.close(); }catch(IOException e){}
-				
-				fstream = null;
-				file = null;
-				
-				file = RhoClassFactory.createFile();
-				file.open(strFileName, false, true);
-				fstream = file.getOutStreamEx(file.length());
-				
 				try{
-					resp = pullFile1( strUrl, fstream, file.length(), oSession );
-					//break;
+					resp = pullFile1( strUrl, file, file.size(), oSession );
 				}catch(IOException e)
 				{
 		    		if ( m_bCancel || nFailTry+1 >= MAX_NETREQUEST_RETRY )
@@ -344,21 +333,21 @@ public class NetRequest
 		    		nFailTry++;
 		    		m_nCurDownloadSize = 1;
 		    	}
-			}while( !m_bCancel && resp.isOK() && m_nCurDownloadSize > 0 && m_nMaxPacketSize > 0 );
+			}while( !m_bCancel && (resp == null || resp.isOK()) && m_nCurDownloadSize > 0 && m_nMaxPacketSize > 0 );
 			
 		}finally{
-			if ( fstream != null )
-				try{ fstream.close();}catch(IOException e){}
-			
 			if ( file != null )
-				try{ file.close(); }catch(IOException e){}
+			{
+				file.close();
+				file = null;
+			}
 		}
 		
 		return resp != null && !m_bCancel ? resp : new NetResponse("", IHttpConnection.HTTP_INTERNAL_ERROR );
 	}
 	
-	static byte[]  m_byteDownloadBuffer = new byte[1024*20]; 
-	NetResponse pullFile1( String strUrl, OutputStream fstream, long nStartPos, IRhoSession oSession )throws Exception
+	static byte[]  m_byteDownloadBuffer = new byte[1024*260]; 
+	NetResponse pullFile1( String strUrl, IRAFile file, long nStartPos, IRhoSession oSession )throws Exception
 	{
 		String strRespBody = null;
 		InputStream is = null;
@@ -415,7 +404,9 @@ public class NetRequest
 		    			nRead = /*bufferedReadByByte(m_byteBuffer, is);*/is.read(m_byteDownloadBuffer);
 		    			if ( nRead > 0 )
 		    			{
-		    				fstream.write(m_byteDownloadBuffer, 0, nRead);
+		    				file.write(m_byteDownloadBuffer, 0, nRead);
+							file.sync();
+
 		    				m_nCurDownloadSize += nRead;
 		    			}
 		    		}while( !m_bCancel && nRead >= 0 );
