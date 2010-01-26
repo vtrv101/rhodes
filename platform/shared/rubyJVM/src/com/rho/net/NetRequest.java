@@ -8,6 +8,7 @@ import java.io.OutputStream;
 
 import com.rho.RhoClassFactory;
 //import com.rho.RhoConf;
+import com.rho.RhoConf;
 import com.rho.RhoEmptyLogger;
 import com.rho.RhoLogger;
 import com.rho.file.*;
@@ -308,12 +309,15 @@ public class NetRequest
 	
 	long m_nMaxPacketSize = 0;
 	int m_nCurDownloadSize = 0;
+	boolean m_bFlushFileAfterWrite = false;
 	public NetResponse pullFile( String strUrl, String strFileName, IRhoSession oSession )throws Exception
 	{
 		IRAFile file = null;
 		NetResponse resp = null;
 		
-		m_nMaxPacketSize = RhoClassFactory.getNetworkAccess().getMaxPacketSize(); 
+		m_nMaxPacketSize = RhoClassFactory.getNetworkAccess().getMaxPacketSize();
+		m_bFlushFileAfterWrite = RhoConf.getInstance().getBool("use_persistent_storage");
+			
 		try{
 
 			file = RhoClassFactory.createRAFile();
@@ -405,7 +409,9 @@ public class NetRequest
 		    			if ( nRead > 0 )
 		    			{
 		    				file.write(m_byteDownloadBuffer, 0, nRead);
-							file.sync();
+		    				
+		    				if (m_bFlushFileAfterWrite)
+		    					file.sync();
 
 		    				m_nCurDownloadSize += nRead;
 		    			}

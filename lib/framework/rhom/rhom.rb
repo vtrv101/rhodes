@@ -48,11 +48,15 @@ module Rhom
         Rho::RhoConfig.bulksync_state='0'
         ::Rho::RHO.get_user_db().execute_sql("UPDATE sources SET token=0")
         
-        ::Rho::RHO.get_user_db().delete_all_from_table('changed_values')
-        ::Rho::RHO.get_application_db().delete_all_from_table('changed_values')
+        #::Rho::RHO.get_user_db().delete_all_from_table('changed_values')
+        #::Rho::RHO.get_application_db().delete_all_from_table('changed_values')
         
-        ::Rho::RHO.get_user_db().destroy_table('object_values')
-        ::Rho::RHO.get_application_db().destroy_table('object_values')
+        #::Rho::RHO.get_user_db().destroy_table('object_values')
+        #::Rho::RHO.get_application_db().destroy_table('object_values')
+        
+        ::Rho::RHO.get_user_db().destroy_tables(:exclude => ['sources','client_info'])
+        ::Rho::RHO.get_application_db().destroy_tables(:exclude => ['sources','client_info'])
+        
       end
       
       def database_full_reset_and_logout

@@ -374,9 +374,10 @@ module Rhom
                   if args.first == :all || args.first == :first || args.first == :count
                   
                     #!args[1] || !args[1][:conditions] || 
-                    #if args[1] && args[1][:conditions] && args[1][:conditions].is_a?(Hash)
+                    if args[1] && args[1][:conditions] && args[1][:conditions].is_a?(Hash)
                         return find_bycondhash(args,&block)
-                    #end
+                    end
+                    #return find_bycondhash(args,&block) unless  args[1] && args[1][:conditions] && (args[1][:conditions].is_a?(String)||args[1][:conditions].is_a?(Array))
                   
                     where_cond = {"source_id"=>get_source_id}
                   elsif args.first.is_a?(String)

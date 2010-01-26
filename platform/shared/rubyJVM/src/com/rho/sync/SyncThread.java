@@ -470,9 +470,7 @@ public class SyncThread extends RhoThread
 								"in SyncEngine.dosearch_source: wrong number of arguments ( " + args.size() + " for " + 7 + " )");			
 					
 					try{
-						//TODO: convert ruby array to vector
-						RubyValue valSources = args.get(0);
-						Vector arSources = new Vector();
+						Vector arSources = RhoRuby.makeVectorStringFromArray(args.get(0));
 						
 						String from = args.get(1).toStr();
 						String params = args.get(2).toStr();

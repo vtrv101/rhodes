@@ -563,7 +563,7 @@ public class SyncEngine implements NetRequest.IRhoSession
 		    NetResponse resp1 = getNet().pullFile(strHsqlDataUrl, fDataName, this);
 		    if ( !resp1.isOK() )
 		    {
-			    LOG.ERROR("Bulk sync failed: cannot download database file.");
+			    LOG.ERROR("Bulk sync failed: cannot download database file: " + resp1.getRespCode() );
 			    stopSync();
 			    getNotify().fireBulkSyncNotification(true, "", strPartition, RhoRuby.ERR_REMOTESERVER);
 			    return;

@@ -243,6 +243,10 @@ void rho_ruby_enum_strhash(VALUE hash, rho_hash_eachstr_func * func, void* data)
 void rho_ruby_enum_strary(VALUE ary, rho_ary_eachstr_func * func, void* data)
 {
     int i = 0;
+
+    if ( ary ==0 || ary == Qnil )
+        return;
+
     for (i=0; i<RARRAY_LEN(ary); i++) 
     {
         VALUE value = RARRAY_PTR(ary)[i];

@@ -127,11 +127,11 @@ public class DBAdapter extends RubyBasic {
 		return fName;
 	}
 	
-	RubyString[] getColNames(IDBResult rows)
+	RubyString[] getOrigColNames(IDBResult rows)
 	{
 		RubyString[] colNames = new RubyString[rows.getColCount()];
 		for ( int nCol = 0; nCol < rows.getColCount(); nCol ++ )
-			colNames[nCol] = ObjectFactory.createString(rows.getColName(nCol));
+			colNames[nCol] = ObjectFactory.createString(rows.getOrigColName(nCol));
 		
 		return colNames;
 	}
@@ -441,7 +441,25 @@ public class DBAdapter extends RubyBasic {
 		return strInsert;
 	}
     
-    private RubyValue rb_destroy_table(RubyValue v) 
+	private boolean destroyTableName(String tableName, Vector arIncludeTables, Vector arExcludeTables )
+	{
+	    int i;
+	    for (i = 0; i < (int)arExcludeTables.size(); i++ )
+	    {
+	        if ( ((String)arExcludeTables.elementAt(i)).equalsIgnoreCase(tableName) )
+	            return false;
+	    }
+
+	    for (i = 0; i < (int)arIncludeTables.size(); i++ )
+	    {
+	        if ( ((String)arIncludeTables.elementAt(i)).equalsIgnoreCase(tableName) )
+	            return true;
+	    }
+
+	    return arIncludeTables.size()==0;
+	}
+	
+    private RubyValue rb_destroy_tables(RubyValue vInclude, RubyValue vExclude) 
     {
 		if ( !m_bIsOpen )
 			return RubyConstant.QNIL;
@@ -450,7 +468,8 @@ public class DBAdapter extends RubyBasic {
 		try{
 		    getAttrMgr().reset(this);
 			
-			String strTable = v.toStr();
+			Vector vecIncludes = RhoRuby.makeVectorStringFromArray(vInclude);
+			Vector vecExcludes = RhoRuby.makeVectorStringFromArray(vExclude);
 			
 			String dbName = getNameNoExt(m_strDBPath);
 			String dbNewName  = dbName + "new";
@@ -486,7 +505,7 @@ public class DBAdapter extends RubyBasic {
 			for ( int i = 0; i< vecTables.length; i++ )
 			{
 				String tableName = vecTables[i];
-				if ( tableName.equalsIgnoreCase(strTable) )
+				if ( destroyTableName( tableName, vecIncludes, vecExcludes ) )
 					continue;
 				
 				res = executeSQL("SELECT * from " + tableName, null);
@@ -727,7 +746,7 @@ public class DBAdapter extends RubyBasic {
     		}
     		
     		IDBResult rows = executeSQL(v.toStr(), values);
-    		RubyString[] colNames = getColNames(rows);
+    		RubyString[] colNames = getOrigColNames(rows);
     		
     		for( ; !rows.isEnd(); rows.next() )
     		{
@@ -848,9 +867,9 @@ public class DBAdapter extends RubyBasic {
 			protected RubyValue run(RubyValue receiver, RubyBlock block ){
 				return ((DBAdapter)receiver).rb_rollback();}
 		});
-		klass.defineMethod( "destroy_table", new RubyOneArgMethod(){ 
-			protected RubyValue run(RubyValue receiver, RubyValue arg, RubyBlock block ){
-				return ((DBAdapter)receiver).rb_destroy_table(arg);}
+		klass.defineMethod( "destroy_tables", new RubyTwoArgMethod(){ 
+			protected RubyValue run(RubyValue receiver, RubyValue arg, RubyValue arg1, RubyBlock block ){
+				return ((DBAdapter)receiver).rb_destroy_tables(arg, arg1);}
 		});
 		
 		klass.defineMethod("lock_db",

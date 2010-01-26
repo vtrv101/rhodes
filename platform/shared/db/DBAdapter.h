@@ -196,7 +196,7 @@ public:
     void startTransaction();
     void endTransaction();
     void rollback();
-    void destroy_table(String strTable);
+    void destroy_tables(const rho::Vector<rho::String>& arIncludeTables, const rho::Vector<rho::String>& arExcludeTables);
     void setBulkSyncDB(String fDataName);
 
 //private:

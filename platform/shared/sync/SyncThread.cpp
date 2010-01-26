@@ -344,61 +344,9 @@ int rho_sync_openDB(const char* szDBPath, void** ppDB)
     return 0;
 }*/
 
-int rho_db_startUITransaction(void* pDB)
-{
-    rho::db::CDBAdapter& db = *((rho::db::CDBAdapter*)pDB);
-    db.setUnlockDB(true);
-    db.startTransaction();
-
-    //TODO: get error code from DBException
-    return 0;
-}
-
-int rho_db_commitUITransaction(void* pDB)
-{
-    rho::db::CDBAdapter& db = *((rho::db::CDBAdapter*)pDB);
-    db.endTransaction();
-    //TODO: get error code from DBException
-    return 0;
-}
-
-int rho_db_rollbackUITransaction(void* pDB)
-{
-    rho::db::CDBAdapter& db = *((rho::db::CDBAdapter*)pDB);
-    db.rollback();
-    //TODO: get error code from DBException
-    return 0;
-}
-
-int rho_db_destroy_table(void* pDB, const char* szTableName)
-{
-    rho::db::CDBAdapter& db = *((rho::db::CDBAdapter*)pDB);
-    db.destroy_table(szTableName);
-    return 0;
-}
-
-void* rho_db_get_handle(void* pDB)
-{
-    rho::db::CDBAdapter& db = *((rho::db::CDBAdapter*)pDB);
-    return db.getDbHandle();
-}
-
 unsigned long rho_sync_get_attrs(const char* szPartition, int nSrcID)
 {
     return (VALUE)CSyncThread::getDBAdapter(szPartition).getAttrMgr().getAttrsBySrc(nSrcID);
-}
-
-void rho_db_lock(void* pDB)
-{
-    rho::db::CDBAdapter& db = *((rho::db::CDBAdapter*)pDB);
-    db.setUnlockDB(true);
-    db.Lock();
-}
-
-void rho_db_unlock(void* pDB)
-{
-    rho::db::CDBAdapter& db = *((rho::db::CDBAdapter*)pDB);
-    db.Unlock();
 }
 
 void rho_sync_setobjectnotify_url(const char* szUrl)

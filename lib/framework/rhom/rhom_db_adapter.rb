@@ -229,11 +229,11 @@ module Rhom
         execute_sql query
       end
 
-      # deletes all rows from a given table by recreating db-file and save all other tables
-      def destroy_table(table)
+      # deletes all rows from all tables, except list of given tables by recreating db-file and save all other tables
+      def destroy_tables(*args)
           begin
             @database.lock_db unless @inside_transaction
-            @database.destroy_table table
+            @database.destroy_tables args.first[:include], args.first[:exclude]
             @database.unlock_db unless @inside_transaction
           rescue Exception => e
             @database.unlock_db

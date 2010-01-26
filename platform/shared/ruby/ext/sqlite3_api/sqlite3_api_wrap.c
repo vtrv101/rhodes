@@ -13,7 +13,7 @@ extern int rho_sync_openDB(const char* szDBPath, void** ppDB);
 extern int rho_db_startUITransaction(void* pDB);
 extern int rho_db_commitUITransaction(void* pDB);
 extern int rho_db_rollbackUITransaction(void* pDB);
-extern int rho_db_destroy_table(void* pDB, const char* szTableName);
+extern int rho_db_destroy_tables(void* pDB, unsigned long arInclude, unsigned long arExclude);
 extern void* rho_db_get_handle(void* pDB);
 extern void rho_db_lock(void* pDB);
 extern void rho_db_unlock(void* pDB);
@@ -149,20 +149,17 @@ static VALUE* getColNames(sqlite3_stmt* statement, int nCount)
     return res;
 }
 
-static VALUE db_destroy_table(int argc, VALUE *argv, VALUE self)
+static VALUE db_destroy_tables(int argc, VALUE *argv, VALUE self)
 {
-	//sqlite3 * db = NULL;
 	void **ppDB = NULL;		
-    const char* szTableName = NULL;
     int rc = 0;
 
-	if ((argc < 1) || (argc > 1))
-		rb_raise(rb_eArgError, "wrong # of arguments(%d for 1)",argc);
+	if ((argc < 2) || (argc > 2))
+		rb_raise(rb_eArgError, "wrong # of arguments(%d for 2)",argc);
 
 	Data_Get_Struct(self, void *, ppDB);
-	szTableName = RSTRING_PTR(argv[0]);
 
-    rc = rho_db_destroy_table(*ppDB, szTableName);
+    rc = rho_db_destroy_tables(*ppDB, argv[0], argv[1]);
 
     return INT2NUM(rc);
 }
@@ -286,9 +283,9 @@ void Init_sqlite3_api(void)
 	rb_define_method(mDatabase, "start_transaction", db_start_transaction, -1);	
 	rb_define_method(mDatabase, "commit", db_commit, -1);	
     rb_define_method(mDatabase, "rollback", db_rollback, -1);	
-    rb_define_method(mDatabase, "destroy_table", db_destroy_table, -1);	
     rb_define_method(mDatabase, "lock_db", db_lock, -1);	
     rb_define_method(mDatabase, "unlock_db", db_unlock, -1);	
+    rb_define_method(mDatabase, "destroy_tables", db_destroy_tables, -1);	
 }
 
 #if 0

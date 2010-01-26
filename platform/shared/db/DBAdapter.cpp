@@ -5,6 +5,7 @@
 #include "common/RhoFilePath.h"
 #include "common/RhoConf.h"
 #include "common/RhodesApp.h"
+#include "ruby/ext/rho/rhoruby.h"
 
 namespace rho{
 namespace db{
@@ -232,7 +233,25 @@ sqlite3_stmt* CDBAdapter::createInsertStatement(rho::db::CDBResult& res, const S
 	return stInsert;
 }
 
-void CDBAdapter::destroy_table(String strTable)
+static boolean destroyTableName(String tableName, const rho::Vector<rho::String>& arIncludeTables, const rho::Vector<rho::String>& arExcludeTables )
+{
+    int i;
+    for (i = 0; i < (int)arExcludeTables.size(); i++ )
+    {
+        if ( arExcludeTables.elementAt(i).compare(tableName) == 0 )
+            return false;
+    }
+
+    for (i = 0; i < (int)arIncludeTables.size(); i++ )
+    {
+        if ( arIncludeTables.elementAt(i).compare(tableName) == 0 )
+            return true;
+    }
+
+    return arIncludeTables.size()==0;
+}
+
+void CDBAdapter::destroy_tables(const rho::Vector<rho::String>& arIncludeTables, const rho::Vector<rho::String>& arExcludeTables)
 {
     getAttrMgr().reset(*this);
     CFilePath oFilePath(m_strDbPath);
@@ -256,7 +275,7 @@ void CDBAdapter::destroy_table(String strTable)
     for ( int i = 0; i < (int)vecTables.size(); i++ )
     {
         String tableName = vecTables.elementAt(i);
-        if ( tableName.compare(strTable)==0 )
+        if (destroyTableName(tableName, arIncludeTables, arExcludeTables)  )
             continue;
 
         String strSelect = "SELECT * from " + tableName;
@@ -580,4 +599,74 @@ void CDBAdapter::rollback()
 }
 
 }
+}
+
+extern "C" {
+
+int rho_db_startUITransaction(void* pDB)
+{
+    rho::db::CDBAdapter& db = *((rho::db::CDBAdapter*)pDB);
+    db.setUnlockDB(true);
+    db.startTransaction();
+
+    //TODO: get error code from DBException
+    return 0;
+}
+
+int rho_db_commitUITransaction(void* pDB)
+{
+    rho::db::CDBAdapter& db = *((rho::db::CDBAdapter*)pDB);
+    db.endTransaction();
+    //TODO: get error code from DBException
+    return 0;
+}
+
+int rho_db_rollbackUITransaction(void* pDB)
+{
+    rho::db::CDBAdapter& db = *((rho::db::CDBAdapter*)pDB);
+    db.rollback();
+    //TODO: get error code from DBException
+    return 0;
+}
+
+extern "C" void
+string_iter(const char* szVal, void* par)
+{
+    rho::Vector<rho::String>& ar = *((rho::Vector<rho::String>*)(par));
+    ar.addElement(szVal);
+}
+
+int rho_db_destroy_tables(void* pDB, unsigned long arInclude, unsigned long arExclude)
+{
+    rho::db::CDBAdapter& db = *((rho::db::CDBAdapter*)pDB);
+
+    rho::Vector<rho::String> arIncludeTables;
+    rho_ruby_enum_strary(arInclude, string_iter, &arIncludeTables);
+
+    rho::Vector<rho::String> arExcludeTables;
+    rho_ruby_enum_strary(arExclude, string_iter, &arExcludeTables);
+
+    db.destroy_tables(arIncludeTables,arExcludeTables);
+    return 0;
+}
+
+void* rho_db_get_handle(void* pDB)
+{
+    rho::db::CDBAdapter& db = *((rho::db::CDBAdapter*)pDB);
+    return db.getDbHandle();
+}
+
+void rho_db_lock(void* pDB)
+{
+    rho::db::CDBAdapter& db = *((rho::db::CDBAdapter*)pDB);
+    db.setUnlockDB(true);
+    db.Lock();
+}
+
+void rho_db_unlock(void* pDB)
+{
+    rho::db::CDBAdapter& db = *((rho::db::CDBAdapter*)pDB);
+    db.Unlock();
+}
+
 }

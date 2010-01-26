@@ -12,6 +12,7 @@ import com.rho.sync.SyncThread;
 import com.rho.Properties;
 //import net.rim.device.api.system.CodeModuleManager;
 import com.rho.location.GeoLocation;
+import java.util.Vector;
 
 public class RhoRuby {
 
@@ -251,6 +252,20 @@ public class RhoRuby {
 	public static void add_to_array(RubyValue ar, RubyValue val)
 	{
 		((RubyArray)ar).add(val);
+	}
+	
+	public static Vector makeVectorStringFromArray(RubyValue v)
+	{
+		Vector res = new Vector();
+
+		if ( v == RubyConstant.QNIL )
+			return res;
+		
+		RubyArray ar = (RubyArray)v;
+		for ( int i = 0; i < ar.size(); i++ )
+			res.addElement(ar.get(i).toStr());
+		
+		return res;
 	}
 	
 	public static RubyValue addTimeToHash(RubyHash hash, String key, long val) {
