@@ -175,7 +175,7 @@ def add_extension(path,dest)
         callwritten = false
 
         f.each_line do |line|
-          puts line
+   #       puts line
           #are we starting a replacement area?
           externstart = true if line =~ /EXTERNS/
           callstart = true if line =~ /CALLS/
@@ -260,23 +260,28 @@ def common_bundle_start(startdir, dest)
   chdir start
   clear_linker_settings
 
-  if $app_config["extensions"] and $app_config["extensions"].is_a? Array
-    $app_config["extensions"].each do |extname|
-      rhoextpath = "lib/extensions/" + extname
-      appextpath = $app_path + "/extensions/" + extname
-      extpath = nil
+  extensions = []
+  extensions += $app_config["extensions"] if $app_config["extensions"] and
+    $app_config["extensions"].is_a? Array
+  extensions += $app_config[$config["platform"]["extensions"]] if $config["platform"] and
+    $config["platform"]["extensions"] and $config["platform"]["extensions"].is_a? Array
+  $app_config["extensions"] = extensions
+    
+  $app_config["extensions"].each do |extname|
+    rhoextpath = "lib/extensions/" + extname
+    appextpath = $app_path + "/extensions/" + extname
+    extpath = nil
 
-      if File.exists? appextpath
-        extpath = appextpath
-      elsif File.exists? rhoextpath
-        extpath = rhoextpath
-      end
-
-      unless extpath.nil?
-        add_extension(extpath, dest)
-      end
-
+    if File.exists? appextpath
+      extpath = appextpath
+    elsif File.exists? rhoextpath
+      extpath = rhoextpath
     end
+
+    unless extpath.nil?
+      add_extension(extpath, dest)
+    end
+
   end
 
   check_extension_file

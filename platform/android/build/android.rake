@@ -1,5 +1,6 @@
 #
 require 'digest/sha2'
+require File.dirname(__FILE__) + '/androidcommon.rb'
 
 def set_app_name_android(newname)
   puts "set_app_name"
@@ -22,128 +23,6 @@ end
 
 def generate_rjava
   Rake::Task["build:android:rjava"].execute
-end
-
-def cc_def_args
-  if $cc_def_args_val.nil?
-    args = []
-  args << "--sysroot"
-  args << $ndksysroot
-  args << "-fPIC"
-  args << "-mandroid"
-  args << "-DANDROID"
-  args << "-DOS_ANDROID"
-  args << "-g"
-  if $build_release
-    args << "-O2"
-    args << "-DNDEBUG"
-  else
-    args << "-O0"
-    args << "-D_DEBUG"
-  end
-  $cc_def_args_val = args
-  end
-  $cc_def_args_val.dup
-end
-
-def cc_get_ccbin(filename)
-  if filename =~ /\.[cC]$/
-    $gccbin
-  elsif filename =~ /\.[cC]([cC]|[xXpP][xXpP])$/
-    $gppbin
-  end
-end
-
-def cc_deps(filename, objdir, additional)
-  #puts "Check #{filename}..."
-  depfile = File.join objdir, File.basename(filename).gsub(/\.[cC]([cC]|[xXpP][xXpP])?$/, ".d")
-  if File.exists? depfile
-    if FileUtils.uptodate? depfile, File.read(depfile).gsub(/(^\s+|\s+$)/, '').split(/\s+/)
-      return []
-    end
-  end
-  ccbin = cc_get_ccbin(filename)
-  args = cc_def_args
-  args += additional unless additional.nil?
-  out = `#{ccbin} #{args.join(' ')} -MM -MG #{filename}`
-  out.gsub!(/^[^:]*:\s*/, '').gsub!(/\\\n/, ' ')
-  #out = File.expand_path(__FILE__) + ' ' + out
-
-  mkdir_p objdir unless File.directory? objdir
-  File.open(depfile, "w") { |f| f.write(out) }
-
-  out.split(/\s+/)
-end
-
-def cc_run(command, args)
-  cmdline = command + ' ' + args.join(' ')
-  puts cmdline
-  `#{cmdline}`
-end
-
-def cc_compile(filename, objdir, additional = nil)
-  filename.chomp!
-  objname = File.join objdir, File.basename(filename).gsub(/\.[cC]([cC]|[xXpP][xXpP])?$/, ".o")
-
-  return true if FileUtils.uptodate? objname, [filename] + cc_deps(filename, objdir, additional)
-
-  mkdir_p objdir unless File.directory? objdir
-
-  ccbin = cc_get_ccbin(filename)
-
-  args = cc_def_args
-  args << "-Wall"
-  args += additional if additional.is_a? Array and not additional.empty?
-  args << "-c"
-  args << filename
-  args << "-o"
-  args << objname
-  cmdline = ccbin + ' ' + args.join(' ')
-  cc_run(ccbin, args)
-  return $? == 0
-end
-
-def cc_ar(libname, objects)
-  return true if FileUtils.uptodate? libname, objects
-  cc_run($arbin, ["crs", libname] + objects)
-  return $? == 0
-end
-
-def cc_link(outname, objects, additional = nil, deps = nil)
-  dependencies = objects
-  dependencies += deps unless deps.nil?
-  return true if FileUtils.uptodate? outname, dependencies
-  args = []
-  args << "-nostdlib"
-  args << "-Wl,-shared,-Bsymbolic"
-  args << "-Wl,--whole-archive"
-  args << "-Wl,--no-whole-archive"
-  args << "-Wl,--no-undefined"
-  args << "-Wl,-z,defs"
-  args << "#{$ndksysroot}/usr/lib/libc.so"
-  args << "#{$ndksysroot}/usr/lib/libstdc++.so"
-  args << "#{$ndksysroot}/usr/lib/libm.so"
-  args << "-L#{$ndksysroot}/usr/lib"
-  args << "-Wl,-rpath-link=#{$ndksysroot}/usr/lib"
-  args << "#{$ndktools}/lib/gcc/arm-eabi/#{$ndkgccver}/interwork/libgcc.a"
-  args << "-shared"
-  args << "-fPIC"
-  args << "-Wl,-soname,#{outname}"
-  args << "-o"
-  args << outname
-  args += objects
-  args += additional if additional.is_a? Array and not additional.empty?
-  cc_run($gccbin, args)
-  return false unless $? == 0
-
-  cc_run($stripbin, [outname]) if $build_release
-  return $? == 0
-end
-
-def cc_clean(name)
-  [$objdir[name], $libname[name]].each do |x|
-    rm_rf x if File.exists? x
-  end
 end
 
 namespace "config" do
@@ -195,7 +74,6 @@ namespace "config" do
       $bat_ext = ".bat"
       $exe_ext = ".exe"
       $path_separator = ";"
-      $ndkhost = "windows"
       $rubypath = "res/build-tools/RhoRuby.exe"
 
       # Add PATH to cygwin1.dll
@@ -209,7 +87,6 @@ namespace "config" do
       $bat_ext = ""
       $exe_ext = ""
       $path_separator = ":"
-      $ndkhost = `uname -s`.downcase!.chomp! + "-x86"
       # TODO: add ruby executable for Linux
       if RUBY_PLATFORM =~ /darwin/
         $rubypath = "res/build-tools/RubyMac"
@@ -257,15 +134,9 @@ namespace "config" do
       end
     end
 
-    $ndkgccver = "4.2.1"
-    $ndktools = $androidndkpath + "/build/prebuilt/#{$ndkhost}/arm-eabi-#{$ndkgccver}"
-    $ndksysroot = $androidndkpath + "/build/platforms/android-#{ANDROID_API_LEVEL}/arch-arm"
 
-    $gccbin = $ndktools + "/bin/arm-eabi-gcc" + $exe_ext
-    $gppbin = $ndktools + "/bin/arm-eabi-g++" + $exe_ext
-    $arbin = $ndktools + "/bin/arm-eabi-ar" + $exe_ext
-    $stripbin = $ndktools + "/bin/arm-eabi-strip" + $exe_ext
-
+    setup_ndk($androidndkpath,ANDROID_API_LEVEL)
+    
     $stlport_includes = File.join $shareddir, "stlport", "stlport"
 
     $native_libs = ["sqlite", "curl", "stlport", "ruby", "json", "rhocommon", "rhodb", "rholog", "rhosync", "rhomain"]
@@ -280,6 +151,13 @@ namespace "config" do
     $native_libs.each do |x|
       $objdir[x] = $bindir + "/libs/" + $confdir + "/lib" + x
       $libname[x] = $bindir + "/libs/" + $confdir + "/lib" + x + ".a"
+    end
+
+    $extensionsdir = $bindir + "/libs/" + $confdir + "/extensions"
+
+    unless $app_config["android"]["extensions"].nil?
+      $app_config["extensions"] += $app_config["android"]["extensions"] if $app_config["extensions"]
+      $app_config["android"]["extensions"] = nil
     end
 
     mkdir_p $bindir if not File.exists? $bindir
@@ -323,8 +201,8 @@ namespace "build" do
 
     end
 #    desc "Build RhoBundle for android"
-    task :rhobundle => :librhodes do
-      Rake::Task["build:bundle:noxruby"].execute
+    task :rhobundle => ["config:android","build:bundle:noxruby",:extensions,:librhodes] do
+#      Rake::Task["build:bundle:noxruby"].execute
 
       assets = File.join(Jake.get_absolute($androidpath), "Rhodes", "assets")
       hash = ""
@@ -338,6 +216,40 @@ namespace "build" do
       File.open(File.join(assets, "hash"), "w") { |f| f.write(Digest::SHA2.hexdigest(hash)) }
 
     File.open(File.join(assets, "name"), "w") { |f| f.write($appname) }
+
+    end
+
+    task :extensions => "config:android" do
+
+      ENV["ANDROID_NDK"] = $androidndkpath
+      ENV["ANDROID_API_LEVEL"] = ANDROID_API_LEVEL.to_s
+      ENV["TARGET_TEMP_DIR"] = $extensionsdir
+      ENV["BUILD_DIR"] ||= $startdir + "/platform/android/build"
+
+      mkdir_p $bindir + "/libs/" + $confdir + "/extensions" unless File.exist? $bindir + "/libs/" + $confdir + "/extensions"
+
+      $app_config["extensions"].each do |ext|
+        ENV['TEMP_FILES_DIR'] = ENV["TARGET_TEMP_DIR"] + "/#{ext}"
+
+        rhoextpath = "lib/extensions/" + ext + "/ext"
+        appextpath = $app_path + "/extensions/" + ext + "/ext"
+        extpath = ""
+
+        puts appextpath
+        puts rhoextpath
+
+        if File.exists? appextpath
+          extpath = appextpath
+        elsif File.exists? rhoextpath
+          extpath = rhoextpath
+        end
+        
+     
+
+        puts Jake.run('./build', [], extpath) if File.executable? File.join(extpath, 'build')
+        exit 1 unless $? == 0
+        
+      end
 
     end
 
@@ -388,7 +300,8 @@ namespace "build" do
       File.read(File.join($builddir, "libruby_build.files")).each do |f|
         cc_compile f, objdir, args or exit 1
       end
-      cc_ar libname, Dir.glob(objdir + "/**/*.o") or exit 1
+
+      cc_ar libname, Dir.glob(objdir + "/**/*.o") + Dir.glob($extensionsdir + "/*.a") or exit 1
     end
 
     task :libjson => "config:android" do
@@ -542,6 +455,7 @@ namespace "build" do
 
       args = []
       args << "-L#{$bindir}/libs/#{$confdir}"
+      args << "-L#{$extensionsdir}"
       args << "-lrhomain"
       args << "-lruby"
       args << "-lrhosync"
@@ -554,6 +468,11 @@ namespace "build" do
       args << "-lsqlite"
       args << "-ldl"
       args << "-lz"
+
+      Dir.glob($extensionsdir + "/*.a").reverse.each do |f|
+        args << "-l" + File.basename(f).gsub(/^lib/,"").gsub(/\.a$/,"")
+      end
+
       cc_link libname, Dir.glob(objdir + "/**/*.o"), args, deps or exit 1
 
       destdir = File.join($androidpath, "Rhodes", "libs", "armeabi")
