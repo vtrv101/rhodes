@@ -419,6 +419,7 @@ void CRhodesApp::initAppUrls()
     m_strHomeUrl += getFreeListeningPort();
 
     m_strBlobsDirPath = getRhoRootPath() + "apps/public/db-files";
+    m_strDBDirPath = getRhoRootPath() + "db";
     m_strLoadingPagePath = "file://" + getRhoRootPath() + "apps/loading.html"; 
 }
 

@@ -415,6 +415,9 @@ void CSyncEngine::doBulkSync(String strClientID, int nBulkSyncState)//throws Exc
     getNotify().fireBulkSyncNotification(true, "", "", RhoRuby.ERR_NONE);        
 }
 
+extern "C"
+int rho_unzip_file(const char* szZipPath);
+
 static String getHostFromUrl( const String& strUrl );
 void CSyncEngine::loadBulkPartition(db::CDBAdapter& dbPartition, const String& strPartition, const String& strClientID )
 {
@@ -465,11 +468,12 @@ void CSyncEngine::loadBulkPartition(db::CDBAdapter& dbPartition, const String& s
 
    	getNotify().fireBulkSyncNotification(false, "download", strPartition, RhoRuby.ERR_NONE);
 
-    String fDataName = makeBulkDataFileName(strDataUrl, dbPartition.getDBPath(), "_bulk");
-    String strSqlDataUrl = getHostFromUrl(serverUrl) + strDataUrl;
+    String fDataName = makeBulkDataFileName(/*"data/bbook/bbook_1264475432.data"*/strDataUrl, dbPartition.getDBPath(), "");//, "_bulk");
+    String strZip = ".rzip";
+    String strSqlDataUrl = /*"http://204.236.220.203/data/bbook/bbook_1264475432.data" + strZip;*/getHostFromUrl(serverUrl) + strDataUrl+strZip;
     LOG(INFO) + "Bulk sync: download data from server: " + strSqlDataUrl;
     {
-        NetResponse( resp1, getNet().pullFile(strSqlDataUrl, fDataName, this) );
+        NetResponse( resp1, getNet().pullFile(strSqlDataUrl, fDataName+strZip, this) );
         if ( !resp1.isOK() )
         {
 	        LOG(ERROR) + "Bulk sync failed: cannot download database file.";
@@ -478,6 +482,18 @@ void CSyncEngine::loadBulkPartition(db::CDBAdapter& dbPartition, const String& s
 	        return;
         }
     }
+
+    LOG(INFO) + "Bulk sync: unzip db";
+
+    if ( !rho_unzip_file((fDataName+strZip).c_str()) )
+    {
+        CRhoFile::deleteFile((fDataName+strZip).c_str());
+        LOG(ERROR) + "Bulk sync failed: cannot unzip database file.";
+        stopSync();
+        getNotify().fireBulkSyncNotification(true, "", strPartition, RhoRuby.ERR_UNEXPECTEDSERVERRESPONSE);
+        return;
+    }
+    CRhoFile::deleteFile((fDataName+strZip).c_str());
 
 	LOG(INFO) + "Bulk sync: start change db";
    	getNotify().fireBulkSyncNotification(false, "change_db", strPartition, RhoRuby.ERR_NONE);

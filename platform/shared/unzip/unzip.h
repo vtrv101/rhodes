@@ -49,8 +49,10 @@ typedef struct
 } ZIPENTRY;
 
 
-//HZIP OpenZip(const TCHAR *fn, const char *password);
 HZIP OpenZip(void *z,unsigned int len, const char *password);
+
+HZIP OpenZipFile(const TCHAR *fn, const char *password);
+
 HZIP OpenZipHandle(HANDLE h, const char *password);
 // OpenZip - opens a zip file and returns a handle with which you can
 // subsequently examine its contents. You can open a zip file from:
