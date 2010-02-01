@@ -98,7 +98,7 @@
 									<object class="IBUIBarButtonItem" id="596451217">
 										<object class="NSCustomResource" key="IBUIImage">
 											<string key="NSClassName">NSImage</string>
-											<string key="NSResourceName">icon_home.png</string>
+											<string key="NSResourceName">home.png</string>
 										</object>
 										<reference key="IBUIToolbar" ref="368036388"/>
 									</object>
@@ -110,7 +110,7 @@
 									<object class="IBUIBarButtonItem" id="581169041">
 										<object class="NSCustomResource" key="IBUIImage">
 											<string key="NSClassName">NSImage</string>
-											<string key="NSResourceName">icon_settings.png</string>
+											<string key="NSResourceName">settings.png</string>
 										</object>
 										<reference key="IBUIToolbar" ref="368036388"/>
 									</object>
