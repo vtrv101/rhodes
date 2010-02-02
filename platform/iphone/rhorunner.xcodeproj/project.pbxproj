@@ -43,7 +43,6 @@
 		BDE35A7A107F900A009941C7 /* RhoFileImpl.m in Sources */ = {isa = PBXBuildFile; fileRef = BDE35A79107F900A009941C7 /* RhoFileImpl.m */; };
 		BDE35AB9107F977D009941C7 /* RhoFile.cpp in Sources */ = {isa = PBXBuildFile; fileRef = BDE35AB7107F977D009941C7 /* RhoFile.cpp */; };
 		BDFBD99110B1B98900BAAFAB /* MainWindow.xib in Resources */ = {isa = PBXBuildFile; fileRef = BDFBD99010B1B98900BAAFAB /* MainWindow.xib */; };
-		BDFBD99610B1B99A00BAAFAB /* Entitlements.plist in Resources */ = {isa = PBXBuildFile; fileRef = BDFBD99510B1B99A00BAAFAB /* Entitlements.plist */; };
 		BDFBD99A10B1B9A900BAAFAB /* Settings.bundle in Resources */ = {isa = PBXBuildFile; fileRef = BDFBD99910B1B9A900BAAFAB /* Settings.bundle */; };
 		BDFBD9A110B1B9CD00BAAFAB /* back_btn.png in Resources */ = {isa = PBXBuildFile; fileRef = BDFBD9A010B1B9CD00BAAFAB /* back_btn.png */; };
 		BDFBD9A410B1B9E500BAAFAB /* forward_btn.png in Resources */ = {isa = PBXBuildFile; fileRef = BDFBD9A210B1B9E500BAAFAB /* forward_btn.png */; };
@@ -713,7 +712,6 @@
 			buildActionMask = 2147483647;
 			files = (
 				BDFBD99110B1B98900BAAFAB /* MainWindow.xib in Resources */,
-				BDFBD99610B1B99A00BAAFAB /* Entitlements.plist in Resources */,
 				BDFBD99A10B1B9A900BAAFAB /* Settings.bundle in Resources */,
 				BDFBD9A110B1B9CD00BAAFAB /* back_btn.png in Resources */,
 				BDFBD9A410B1B9E500BAAFAB /* forward_btn.png in Resources */,
@@ -864,8 +862,8 @@
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
 				CODE_SIGN_ENTITLEMENTS = "";
-				CODE_SIGN_IDENTITY = "iPhone Developer: Lars Burgess";
-				"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "iPhone Developer: Lars Burgess";
+				CODE_SIGN_IDENTITY = "iPhone Developer: Vidal Graupera (9RLQE9M6HT)";
+				"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "iPhone Developer: Vidal Graupera (9RLQE9M6HT)";
 				COPY_PHASE_STRIP = NO;
 				EXTENSIONS_LDFLAGS = "-filelist $(TARGET_TEMP_DIR)/rhodeslibs.txt";
 				GCC_DYNAMIC_NO_PIC = NO;
@@ -920,8 +918,8 @@
 					"$(EXTENSIONS_LDFLAGS)",
 				);
 				PRODUCT_NAME = rhorunner;
-				PROVISIONING_PROFILE = "E302C486-8C38-4E23-B945-196D8B2BA5B9";
-				"PROVISIONING_PROFILE[sdk=iphoneos*]" = "E302C486-8C38-4E23-B945-196D8B2BA5B9";
+				PROVISIONING_PROFILE = "B99B7C2E-C525-49B3-9E2C-98030EA6C0DB";
+				"PROVISIONING_PROFILE[sdk=iphoneos*]" = "B99B7C2E-C525-49B3-9E2C-98030EA6C0DB";
 				SDKROOT = iphoneos3.0;
 				STANDARD_C_PLUS_PLUS_LIBRARY_TYPE = dynamic;
 				USER_HEADER_SEARCH_PATHS = "../shared/curl/include ../shared/ ../shared/syncengine ../shared/logging ../shared/common rhoextlib";
