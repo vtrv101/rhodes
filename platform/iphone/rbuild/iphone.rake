@@ -211,8 +211,15 @@ namespace "run" do
 
      puts `echo "#{$applog}" > "#{$simrhodes}/Documents/rhologpath.txt"`
      rholog = $simapp + "/" + $guid + "/Documents/RhoLog.txt"
+
+
+     simpublic = $simapp + "/" + $guid + "/Documents/apps/public"
+     apppublic = $app_path + "/sim-public"
+
      apprholog = $app_path + "/rholog.txt"
      rm_f apprholog
+     rm_f apppublic
+     puts `ln -f -s "#{simpublic}" "#{apppublic}"`
      puts `ln -f -s "#{rholog}" "#{apprholog}"`
      puts `echo > "#{rholog}"`
      f = File.new("#{$simapp}/#{$guid}.sb","w")
@@ -229,7 +236,7 @@ namespace "run" do
 
   end
 
-  task :iphonespec => :buildsim do
+  task :iphonespec => ["clean:iphone",:buildsim] do
 
     sdkroot = "/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator" +
               $sdk.gsub(/iphonesimulator/,"") + ".sdk"
@@ -318,7 +325,24 @@ namespace "clean" do
        rm_rf 'build/Debug-*'
        rm_rf 'build/Release-*'
       chdir $startdir
-    
+
+      found = true
+
+      while found do
+        found = false
+        Find.find($simapp) do |path|
+          if File.basename(path) == "rhorunner.app"
+            $guid = File.basename(File.dirname(path))
+            found = true
+          end
+        end
+
+        if found
+          $simrhodes = File.join($simapp,$guid)
+          rm_rf $simrhodes
+          rm_rf $simrhodes + ".sb"
+        end
+      end
     end
     
 #    desc "Clean rhobundle"
