@@ -53,6 +53,7 @@
 #define RUBY_THREAD_PRIORITY_MIN -3
 #endif
 
+//#define THREAD_DEBUG 1
 #ifndef THREAD_DEBUG
 #define THREAD_DEBUG 0
 #endif
@@ -168,6 +169,14 @@ rb_thread_s_debug_set(VALUE self, VALUE val)
 NOINLINE(static int thread_start_func_2(rb_thread_t *th, VALUE *stack_start,
 					VALUE *register_stack_start));
 static void timer_thread_function(void *);
+
+//RHO
+#include "logging/RhoLog.h"
+int rhoRubyPrintf(const char *format, ...);
+#ifndef USE_STD_PRINTF
+#define printf rhoRubyPrintf
+#endif
+//RHO
 
 #if   defined(_WIN32)
 #include "thread_win32.c"
@@ -930,11 +939,11 @@ rb_thread_sleep(int sec)
 void
 rb_thread_schedule(void)
 {
-    thread_debug("rb_thread_schedule\n");
+//    thread_debug("rb_thread_schedule\n");
     if (!rb_thread_alone()) {
 	rb_thread_t *th = GET_THREAD();
 
-	thread_debug("rb_thread_schedule/switch start\n");
+	//thread_debug("rb_thread_schedule/switch start\n");
 
 	rb_gc_save_machine_context(th);
 	native_mutex_unlock(&th->vm->global_vm_lock);
@@ -944,7 +953,7 @@ rb_thread_schedule(void)
 	native_mutex_lock(&th->vm->global_vm_lock);
 
 	rb_thread_set_current(th);
-	thread_debug("rb_thread_schedule/switch done\n");
+	//thread_debug("rb_thread_schedule/switch done\n");
 
 	RUBY_VM_CHECK_INTS();
     }
@@ -959,7 +968,7 @@ blocking_region_begin(rb_thread_t *th, struct rb_blocking_region_buffer *region,
     th->blocking_region_buffer = region;
     set_unblock_function(th, func, arg, &region->oldubf);
     th->status = THREAD_STOPPED;
-    thread_debug("enter blocking region (%p)\n", (void *)th);
+//    thread_debug("enter blocking region (%p)\n", (void *)th);
     rb_gc_save_machine_context(th);
     native_mutex_unlock(&th->vm->global_vm_lock);
 }
@@ -969,7 +978,7 @@ blocking_region_end(rb_thread_t *th, struct rb_blocking_region_buffer *region)
 {
     native_mutex_lock(&th->vm->global_vm_lock);
     rb_thread_set_current(th);
-    thread_debug("leave blocking region (%p)\n", (void *)th);
+//    thread_debug("leave blocking region (%p)\n", (void *)th);
     remove_signal_thread_list(th);
     th->blocking_region_buffer = 0;
     reset_unblock_function(th, &region->oldubf);
@@ -2017,7 +2026,7 @@ rb_thread_alone()
     int num = 1;
     if (GET_THREAD()->vm->living_threads) {
 	num = vm_living_thread_num(GET_THREAD()->vm);
-	thread_debug("rb_thread_alone: %d\n", num);
+	//thread_debug("rb_thread_alone: %d\n", num);
     }
     return num == 1;
 }
@@ -2431,7 +2440,7 @@ static void
 rb_thread_wait_fd_rw(int fd, int read)
 {
     int result = 0;
-    thread_debug("rb_thread_wait_fd_rw(%d, %s)\n", fd, read ? "read" : "write");
+    //thread_debug("rb_thread_wait_fd_rw(%d, %s)\n", fd, read ? "read" : "write");
 
     if (fd < 0) {
 	rb_raise(rb_eIOError, "closed stream");
@@ -2456,7 +2465,7 @@ rb_thread_wait_fd_rw(int fd, int read)
 	}
     }
 
-    thread_debug("rb_thread_wait_fd_rw(%d, %s): done\n", fd, read ? "read" : "write");
+    //thread_debug("rb_thread_wait_fd_rw(%d, %s): done\n", fd, read ? "read" : "write");
 }
 
 void

@@ -229,7 +229,11 @@
 #define HAVE_SOCKADDR_STORAGE 1
 #define HAVE_GAI_STRERROR 1
 
-#define LOAD_RELATIVE 1
+#ifndef RUBYLINUX
+    #define LOAD_RELATIVE 1
+#else
+    #define LOAD_RELATIVE 0
+#endif
 
 #define RUBY_LIB "/lib"
 #define RUBY_SITE_LIB "/apps"
@@ -245,6 +249,8 @@
 #define HAVE_INET_ATON 1
 #define HAVE_GETADDRINFO 1
 #define HAVE_GETNAMEINFO 1
+#define HAVE_GETHOSTNAME 1
+#define HAVE_UNAME 1
 
 #if defined(OS_ANDROID)
 #  define HAVE_SYS_SYSCALL_H 1

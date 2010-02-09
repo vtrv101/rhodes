@@ -34,6 +34,7 @@ CSyncEngine::CSyncEngine(db::CDBAdapter& db): m_dbAdapter(db), m_NetRequest(0), 
 {
     m_bStopByUser = false;
     m_nSyncPageSize = 2000;
+    m_bNoThreaded = false;
 }
 
 String CSyncEngine::SYNC_PAGE_SIZE() { return convertToStringA(m_nSyncPageSize); }
@@ -248,6 +249,8 @@ String CSyncEngine::requestClientIDByNet()
     String serverUrl = RHOCONF().getPath("syncserver");
     String strUrl = serverUrl + "clientcreate";
     String strQuery = SYNC_SOURCE_FORMAT();
+    if ( CClientRegister::getInstance() != null )
+        strQuery += "&" + CClientRegister::getInstance()->getRegisterBody();
 
     NetResponse(resp,getNet().pullData(strUrl+strQuery, this));
     if ( resp.isOK() && resp.getCharData() != null )
@@ -356,27 +359,6 @@ void CSyncEngine::syncAllSources()
     	getNotify().fireSyncNotification(null, true, RhoRuby.ERR_NONE, RhoRuby.getMessageText("sync_completed"));
 }
 
-void CSyncEngine::callLoginCallback(String callback, int nErrCode, String strMessage)
-{
-	//try{
-    String strBody = "error_code=" + convertToStringA(nErrCode);
-    strBody += "&error_message=";
-    URI::urlEncode(strMessage, strBody);
-    strBody += "&rho_callback=1";
-
-    String strUrl = getNet().resolveUrl(callback);
-    
-	LOG(INFO) + "Login callback: " + callback + ". Body: "+ strBody;
-
-    NetResponse( resp, getNet().pushData( strUrl, strBody, this ) );
-    if ( !resp.isOK() )
-        LOG(ERROR) + "Call Login callback failed. Code: " + resp.getRespCode() + "; Error body: " + resp.getCharData();
-	//}catch(Exception exc)
-	//{
-	//	LOG.ERROR("Call Login callback failed.", exc);
-	//}
-}
-
 static String getServerFromUrl( const String& strUrl );
 boolean CSyncEngine::checkAllSourcesFromOneDomain()//throws Exception
 {
@@ -405,32 +387,30 @@ void CSyncEngine::login(String name, String password, String callback)
 	//try {
 	if ( !checkAllSourcesFromOneDomain() )
 	{
-        callLoginCallback(callback, RhoRuby.ERR_DIFFDOMAINSINSYNCSRC, "");
+        getNotify().callLoginCallback(callback, RhoRuby.ERR_DIFFDOMAINSINSYNCSRC, "");
     	return;
 	}
 
     String serverUrl = RHOCONF().getPath("syncserver");
     String strBody = "login=" + name + "&password=" + password + "&remember_me=1";
-    if ( CClientRegister::getInstance() != null )
-        strBody += CClientRegister::getInstance()->getRegisterBody();
 
     NetResponse( resp, getNet().pullCookies( serverUrl+"client_login", strBody, this ) );
     
     if ( !resp.isResponseRecieved())
     {
-        callLoginCallback(callback, RhoRuby.ERR_NETWORK, resp.getCharData());
+        getNotify().callLoginCallback(callback, RhoRuby.ERR_NETWORK, resp.getCharData());
         return;
     }
 
     if ( resp.isUnathorized() )
     {
-        callLoginCallback(callback, RhoRuby.ERR_UNATHORIZED, resp.getCharData());
+        getNotify().callLoginCallback(callback, RhoRuby.ERR_UNATHORIZED, resp.getCharData());
     	return;
     }
 
     if ( !resp.isOK() )
     {
-        callLoginCallback(callback, RhoRuby.ERR_REMOTESERVER, resp.getCharData());
+        getNotify().callLoginCallback(callback, RhoRuby.ERR_REMOTESERVER, resp.getCharData());
     	return;
     }
 
@@ -438,7 +418,7 @@ void CSyncEngine::login(String name, String password, String callback)
     if ( strSession.length() == 0 )
     {
     	LOG(ERROR) + "Return empty session.";
-    	callLoginCallback(callback, RhoRuby.ERR_UNEXPECTEDSERVERRESPONSE, "" );
+    	getNotify().callLoginCallback(callback, RhoRuby.ERR_UNEXPECTEDSERVERRESPONSE, "" );
         return;
     }
 
@@ -448,7 +428,7 @@ void CSyncEngine::login(String name, String password, String callback)
     if ( CClientRegister::getInstance() != null )
         CClientRegister::getInstance()->stopWait();
     
-    callLoginCallback(callback, RhoRuby.ERR_NONE, "" );
+    getNotify().callLoginCallback(callback, RhoRuby.ERR_NONE, "" );
 	
     PROF_STOP("Login");
 	//}catch(Exception exc)

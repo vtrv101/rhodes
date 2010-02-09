@@ -23,12 +23,12 @@ public class MapViewScreen extends MainScreen {
 	private static final int ZOOM_MODE = 2;
 	
 	private static final int MIN_MOVE_STEP = 1;
-	private static final int MAX_MOVE_STEP = 32;
+	private static final int MAX_MOVE_STEP = 16;
 	
 	private static final int MOVE_TIMEOUT_DOUBLING = 300;
 	
 	private static final MapProvider[] providers = {
-		new BBMapProvider(),
+		//new BBMapProvider(),
 		new GoogleMapProvider()
 	};
 	
@@ -96,8 +96,8 @@ public class MapViewScreen extends MainScreen {
 		int zoom = mapField.calculateZoom(latDelta, lonDelta);
 		
 		mapField.setMapType(map_type);
-		mapField.moveTo(lat, lon);
 		mapField.setZoom(zoom);
+		mapField.moveTo(lat, lon);
 		
 		Enumeration e = annotations.elements();
 		while (e.hasMoreElements()) {
@@ -106,6 +106,8 @@ public class MapViewScreen extends MainScreen {
 		}
 		
 		mode = PAN_MODE;
+		
+		mapField.redraw();
 	}
 	
 	/**
@@ -206,6 +208,7 @@ public class MapViewScreen extends MainScreen {
 			//int newDy = dy*10;
 			//LOG.TRACE("Scroll by " + newDx + "," + newDy);
 			mapField.move(newDx, newDy);
+			mapField.redraw();
 		}
 		else if (mode == ZOOM_MODE && dy != 0) {
 			int currentZoom = mapField.getZoom();
@@ -221,6 +224,7 @@ public class MapViewScreen extends MainScreen {
 			}
 			//LOG.TRACE("Set zoom to " + newZoom + " (was " + currentZoom + ")");
 			mapField.setZoom(newZoom);
+			mapField.redraw();
 		}
 		return true;
 	}
