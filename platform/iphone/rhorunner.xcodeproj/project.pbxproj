@@ -31,6 +31,9 @@
 		46C25E3B103240A400A26428 /* RhoDelegate.m in Sources */ = {isa = PBXBuildFile; fileRef = 46C25E3A103240A400A26428 /* RhoDelegate.m */; };
 		5C53337B0FC1B20000F268F0 /* NetRequestImpl.m in Sources */ = {isa = PBXBuildFile; fileRef = 5C5333790FC1B20000F268F0 /* NetRequestImpl.m */; };
 		5C5335C60FC2F44500F268F0 /* RhoClassFactory.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 5C5335C40FC2F44500F268F0 /* RhoClassFactory.cpp */; };
+		A8B7F18C1121E75800BD643A /* settings.png in Resources */ = {isa = PBXBuildFile; fileRef = A8B7F18B1121E75800BD643A /* settings.png */; };
+		A8B7F18F1121E76700BD643A /* home.png in Resources */ = {isa = PBXBuildFile; fileRef = A8B7F18D1121E76700BD643A /* home.png */; };
+		A8B7F1901121E76700BD643A /* Default.png in Resources */ = {isa = PBXBuildFile; fileRef = A8B7F18E1121E76700BD643A /* Default.png */; };
 		BDA4BAA0109A347400467AB9 /* libz.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = BDA4BA9F109A347400467AB9 /* libz.dylib */; };
 		BDB15ED110B2EBC200003DFA /* librhoextlib.a in Frameworks */ = {isa = PBXBuildFile; fileRef = F5F06496102B946F006CFD39 /* librhoextlib.a */; };
 		BDB15ED210B2EC6600003DFA /* librhosynclib.a in Frameworks */ = {isa = PBXBuildFile; fileRef = F563D5450EA8240E0062DA57 /* librhosynclib.a */; };
@@ -42,10 +45,8 @@
 		BDFBD99110B1B98900BAAFAB /* MainWindow.xib in Resources */ = {isa = PBXBuildFile; fileRef = BDFBD99010B1B98900BAAFAB /* MainWindow.xib */; };
 		BDFBD99610B1B99A00BAAFAB /* Entitlements.plist in Resources */ = {isa = PBXBuildFile; fileRef = BDFBD99510B1B99A00BAAFAB /* Entitlements.plist */; };
 		BDFBD99A10B1B9A900BAAFAB /* Settings.bundle in Resources */ = {isa = PBXBuildFile; fileRef = BDFBD99910B1B9A900BAAFAB /* Settings.bundle */; };
-		BDFBD99F10B1B9B900BAAFAB /* gears.png in Resources */ = {isa = PBXBuildFile; fileRef = BDFBD99E10B1B9B900BAAFAB /* gears.png */; };
 		BDFBD9A110B1B9CD00BAAFAB /* back_btn.png in Resources */ = {isa = PBXBuildFile; fileRef = BDFBD9A010B1B9CD00BAAFAB /* back_btn.png */; };
 		BDFBD9A410B1B9E500BAAFAB /* forward_btn.png in Resources */ = {isa = PBXBuildFile; fileRef = BDFBD9A210B1B9E500BAAFAB /* forward_btn.png */; };
-		BDFBD9A510B1B9E500BAAFAB /* home_btn.png in Resources */ = {isa = PBXBuildFile; fileRef = BDFBD9A310B1B9E500BAAFAB /* home_btn.png */; };
 		BDFBD9A710B1BA2000BAAFAB /* icon.png in Resources */ = {isa = PBXBuildFile; fileRef = BDFBD9A610B1BA2000BAAFAB /* icon.png */; };
 		F5128ADD1069752F002F00E5 /* MapAnnotation.m in Sources */ = {isa = PBXBuildFile; fileRef = F5128ADC1069752F002F00E5 /* MapAnnotation.m */; };
 		F5128C2C106C1FF3002F00E5 /* GoogleGeocoder.m in Sources */ = {isa = PBXBuildFile; fileRef = F5128C2B106C1FF3002F00E5 /* GoogleGeocoder.m */; };
@@ -200,6 +201,9 @@
 		5C5335C50FC2F44500F268F0 /* RhoClassFactory.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = RhoClassFactory.h; path = rho/common/RhoClassFactory.h; sourceTree = "<group>"; };
 		5C7162920F8B7EEC0096B6AA /* RhoLib.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; name = RhoLib.xcodeproj; path = RhoLib/RhoLib.xcodeproj; sourceTree = "<group>"; };
 		5CE293FF1009D74F009A75F6 /* SystemInfoImpl.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = SystemInfoImpl.h; path = rho/common/SystemInfoImpl.h; sourceTree = "<group>"; };
+		A8B7F18B1121E75800BD643A /* settings.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = settings.png; sourceTree = "<group>"; };
+		A8B7F18D1121E76700BD643A /* home.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = home.png; sourceTree = "<group>"; };
+		A8B7F18E1121E76700BD643A /* Default.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = Default.png; sourceTree = "<group>"; };
 		BD236A8510B1B6EB00F88F1D /* Info.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		BD2C94A610AE052A008D4692 /* curl.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; name = curl.xcodeproj; path = curl/curl.xcodeproj; sourceTree = SOURCE_ROOT; };
 		BDA4BA9F109A347400467AB9 /* libz.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libz.dylib; path = usr/lib/libz.dylib; sourceTree = SDKROOT; };
@@ -207,10 +211,8 @@
 		BDFBD99010B1B98900BAAFAB /* MainWindow.xib */ = {isa = PBXFileReference; lastKnownFileType = file.xib; path = MainWindow.xib; sourceTree = "<group>"; };
 		BDFBD99510B1B99A00BAAFAB /* Entitlements.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; path = Entitlements.plist; sourceTree = "<group>"; };
 		BDFBD99910B1B9A900BAAFAB /* Settings.bundle */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.plug-in"; path = Settings.bundle; sourceTree = "<group>"; };
-		BDFBD99E10B1B9B900BAAFAB /* gears.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = gears.png; sourceTree = "<group>"; };
 		BDFBD9A010B1B9CD00BAAFAB /* back_btn.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = back_btn.png; sourceTree = "<group>"; };
 		BDFBD9A210B1B9E500BAAFAB /* forward_btn.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = forward_btn.png; sourceTree = "<group>"; };
-		BDFBD9A310B1B9E500BAAFAB /* home_btn.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = home_btn.png; sourceTree = "<group>"; };
 		BDFBD9A610B1BA2000BAAFAB /* icon.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = icon.png; sourceTree = SOURCE_ROOT; };
 		F5128ADB1069752F002F00E5 /* MapAnnotation.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = MapAnnotation.h; path = MapView/MapAnnotation.h; sourceTree = "<group>"; };
 		F5128ADC1069752F002F00E5 /* MapAnnotation.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; name = MapAnnotation.m; path = MapView/MapAnnotation.m; sourceTree = "<group>"; };
@@ -406,10 +408,11 @@
 		466B0FC90F3CFA8000A52314 /* Icons */ = {
 			isa = PBXGroup;
 			children = (
+				A8B7F18D1121E76700BD643A /* home.png */,
+				A8B7F18E1121E76700BD643A /* Default.png */,
 				BDFBD9A210B1B9E500BAAFAB /* forward_btn.png */,
-				BDFBD9A310B1B9E500BAAFAB /* home_btn.png */,
+				A8B7F18B1121E75800BD643A /* settings.png */,
 				BDFBD9A010B1B9CD00BAAFAB /* back_btn.png */,
-				BDFBD99E10B1B9B900BAAFAB /* gears.png */,
 			);
 			name = Icons;
 			sourceTree = "<group>";
@@ -712,11 +715,12 @@
 				BDFBD99110B1B98900BAAFAB /* MainWindow.xib in Resources */,
 				BDFBD99610B1B99A00BAAFAB /* Entitlements.plist in Resources */,
 				BDFBD99A10B1B9A900BAAFAB /* Settings.bundle in Resources */,
-				BDFBD99F10B1B9B900BAAFAB /* gears.png in Resources */,
 				BDFBD9A110B1B9CD00BAAFAB /* back_btn.png in Resources */,
 				BDFBD9A410B1B9E500BAAFAB /* forward_btn.png in Resources */,
-				BDFBD9A510B1B9E500BAAFAB /* home_btn.png in Resources */,
 				BDFBD9A710B1BA2000BAAFAB /* icon.png in Resources */,
+				A8B7F18C1121E75800BD643A /* settings.png in Resources */,
+				A8B7F18F1121E76700BD643A /* home.png in Resources */,
+				A8B7F1901121E76700BD643A /* Default.png in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -1007,8 +1011,8 @@
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
 				CODE_SIGN_ENTITLEMENTS = Entitlements.plist;
-				CODE_SIGN_IDENTITY = "iPhone Developer: Lars Burgess";
-				"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "iPhone Developer: Lars Burgess";
+				CODE_SIGN_IDENTITY = "iPhone Distribution: The VDG Group";
+				"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "iPhone Distribution: The VDG Group";
 				COPY_PHASE_STRIP = YES;
 				EXTENSIONS_LDFLAGS = "-filelist $(TARGET_TEMP_DIR)/rhodeslibs.txt";
 				GCC_PRECOMPILE_PREFIX_HEADER = YES;
@@ -1062,9 +1066,9 @@
 					"$(EXTENSIONS_LDFLAGS)",
 				);
 				PRODUCT_NAME = rhorunner;
-				PROVISIONING_PROFILE = "E302C486-8C38-4E23-B945-196D8B2BA5B9";
-				"PROVISIONING_PROFILE[sdk=iphoneos*]" = "E302C486-8C38-4E23-B945-196D8B2BA5B9";
-				SDKROOT = iphoneos2.2.1;
+				PROVISIONING_PROFILE = "7EB885F9-2325-46D9-AEE4-703ED672F67C";
+				"PROVISIONING_PROFILE[sdk=iphoneos*]" = "7EB885F9-2325-46D9-AEE4-703ED672F67C";
+				SDKROOT = iphoneos3.0;
 				USER_HEADER_SEARCH_PATHS = "../shared/curl/include ../shared/ ../shared/syncengine ../shared/logging ../shared/common rhoextlib";
 			};
 			name = Distribution;
