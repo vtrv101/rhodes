@@ -125,6 +125,7 @@ void RhoRubyStart()
     Init_sqlite3_api();
     Init_GeoLocation();
     Init_SyncEngine();
+    Init_AsyncHttp();
     Init_System();
     Init_Phonebook();
     Init_WebView();
@@ -234,6 +235,10 @@ hash_each(VALUE key, VALUE value, struct CHashEnumData* pEnumData)
 void rho_ruby_enum_strhash(VALUE hash, rho_eachstr_func * func, void* data)
 {
     struct CHashEnumData enumData;
+
+    if ( !hash || hash ==Qnil )
+        return;
+
     enumData.data = data;
     enumData.func = func;
 
@@ -250,6 +255,11 @@ const char* rho_ruby_getErrorText(int nError)
 {
     return "";
     //TODO: rho_ruby_getErrorText
+}
+
+VALUE rho_ruby_get_NIL()
+{
+    return Qnil;
 }
 
 VALUE rho_ruby_create_array()

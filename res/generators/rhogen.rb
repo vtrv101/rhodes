@@ -117,14 +117,17 @@ module Rhogen
         attributes  - list of one or more string attributes (i.e. name,industry,progress), NO spaces between attributes
         
       Optional:
-        type        - optional type (i.e. "ask" for an ask model) 
+        priority    - sync priority (i.e. 100)
+        type        - DEPRECATED: type of model (i.e. "ask" for an ask model). This will be removed in 1.5, instead use 
+                      search method.
     DESC
 
     #option :testing_framework, :desc => 'Specify which testing framework to use (spec, test_unit)'
 
     first_argument :name, :required => true, :desc => "model name"
     second_argument :attributes, :as => :array, :required => true, :desc => "list of one or more string attributes (i.e. name,industry,progress), NO spaces between attributes"
-    third_argument :type, :required => false, :desc => "optional type (i.e. \"ask\" for an ask model)"
+    third_argument :priority, :required => false, :desc => "optional sync priority (i.e. 100)"
+    fourth_argument :type, :required => false, :desc => "optional type (i.e. \"ask\" for an ask model)"
 
     template :config do |template|
       @model_sync_server = syncserver_exists? ? class_name : ''
@@ -164,6 +167,12 @@ module Rhogen
       template.destination = "app/#{name.camel_case}/#{underscore_name}.rb"
     end
 
+    template :spec do |template|
+      underscore_name = name.camel_case.split(/(?=[A-Z])/).map{|w| w.downcase}.join("_")
+      template.source = 'spec.rb'
+      template.destination = "app/#{name.camel_case}/#{underscore_name}_spec.rb"
+    end
+
     def attributes?
       self.attributes && !self.attributes.empty?
     end
@@ -196,8 +205,54 @@ module Rhogen
 
   end
 
+  class SpecGenerator < BaseGenerator
+
+    def self.source_root
+      File.join(File.dirname(__FILE__), 'templates', 'spec')
+    end
+
+    desc <<-DESC
+      Adds spec framework to rhodes application.
+    DESC
+
+    #option :testing_framework, :desc => 'Specify which testing framework to use (spec, test_unit)'
+
+    #first_argument :name, :required => true, :desc => "application name"
+    #second_argument :syncserver, :required => false, :desc => 'url to the source adapter (i.e. "" or "http://rhosync.rhohub.com/apps/myapp/sources/")'
+    #third_argument :zip_url, :required => false, :desc => "optional url to zipfile download of bundle"
+
+
+    directory :specrunner do |directory|
+      directory.source = 'app/SpecRunner'
+      directory.destination = "app/SpecRunner"
+    end
+    directory :mspec do |directory|
+      directory.source = 'app/mspec'
+      directory.destination = "app/mspec"
+    end
+    directory :spec do |directory|
+      directory.source = 'app/spec'
+      directory.destination = "app/spec"
+    end
+    template :fileutils do |template|
+      template.source = 'app/fileutils.rb'
+      template.destination = "app/fileutils.rb"
+    end
+    template :mspecrb do |template|
+      template.source = 'app/mspec.rb'
+      template.destination = "app/mspec.rb"
+    end
+    template :specrunnerrb do |template|
+      template.source = 'app/spec_runner.rb'
+      template.destination = "app/spec_runner.rb"
+    end
+
+  end
+
+
   add :app, AppGenerator
   add :model, ModelGenerator
   add :source, SourceGenerator
+  add :spec, SpecGenerator
 
 end

@@ -111,7 +111,7 @@ class SyncSource
 	DBAdapter getDB(){ return getSync().getDB(); }
 	NetRequest getNet(){ return getSync().getNet(); }
 	void setRefreshTime( int nRefreshTime ){ m_nRefreshTime = nRefreshTime;}
-	void setUrlParams(String strParams){m_strUrlParams=strParams;}
+	void setUrlParams(String strParams){m_strUrlParams=strParams!=null?strParams:"";}
 	void setUrl(String strUrl){m_strUrl=strUrl;}
 	
     SyncSource(int id, String strUrl, String name, long token, SyncEngine syncEngine )
@@ -214,7 +214,11 @@ class SyncSource
 	        SyncBlob blob = (SyncBlob)m_arSyncBlobs.elementAt(i);
 	
 	        String strFilePath = RhoClassFactory.createFile().getDirPath("");
-	        strFilePath += blob.getFilePath();
+	        String strBlobPath = blob.getFilePath(); 
+	        if ( strBlobPath.startsWith("/") )
+	        	strBlobPath = strBlobPath.substring(1);
+	        
+	        strFilePath += strBlobPath;
 	        
 	        strQuery = strBaseQuery + "&" + blob.getBody();
 	        try{
@@ -231,8 +235,11 @@ class SyncSource
 		    	m_nErrCode = RhoRuby.getNetErrorCode(exc);
 		    	throw exc;
 		    }
-	
+
+		    getDB().startTransaction();
+	        getDB().executeSQL("DELETE FROM changed_values WHERE source_id=? and attrib_type=? and value=?", getID(), "blob.file", blob.getFilePath() );
 	        getDB().executeSQL("DELETE FROM object_values WHERE source_id=? and attrib_type=? and value=?", getID(), "blob.file", blob.getFilePath() );
+	        getDB().endTransaction();
 	    }
 	
 	    m_arSyncBlobs.removeAllElements();
@@ -736,7 +743,8 @@ class SyncSource
 			}
 		}
 		
-		fName += "/id_" + value.m_nID.toString() + strExt;
+		//TODO: add join method to Rho::FilePath
+		fName += "id_" + value.m_nID.toString() + strExt;
 		
 		return fName;
 	}
@@ -773,7 +781,7 @@ class SyncSource
         
     	String root = RhoClassFactory.createFile().getDirPath("");
         
-        value.m_strValue = "/" + fName.substring(root.length());;
+        value.m_strValue = "/" + fName.substring(root.length());
         
         return true;
 	}

@@ -152,7 +152,6 @@ public class SyncEngine implements NetRequest.IRhoSession
 			    PROF.DESTROY_COUNTER("Data1");
 			    PROF.DESTROY_COUNTER("Pull");
 			    PROF.STOP("Sync");
-			    
 		    } else {
 		    	if ( m_sources.size() > 0 )
 		        {		    	
@@ -328,7 +327,18 @@ public class SyncEngine implements NetRequest.IRhoSession
 		    }else if ( bResetClient )
 		    {
 		    	if ( !resetClientIDByNet(clientID) )
+		    	{
+			    	if ( m_sources.size() > 0 )
+			        {		    	
+				    	SyncSource src = (SyncSource)m_sources.elementAt(getStartSource());
+				    	src.m_nErrCode = RhoRuby.ERR_REMOTESERVER;
+				    	
+				    	getNotify().fireSyncNotification(src, true, src.m_nErrCode, "");
+			        }else
+			        	getNotify().fireSyncNotification(null, true, RhoRuby.ERR_REMOTESERVER, "");
+		    		
 		    		stopSync();
+		    	}
 		    	else
 		    		getDB().executeSQL("UPDATE client_info SET reset=? where client_id=?", new Integer(0), clientID );	    	
 		    }
@@ -614,15 +624,8 @@ public class SyncEngine implements NetRequest.IRhoSession
 	{
 	    getDB().executeSQL( "UPDATE sources SET session = NULL");
 	    m_strSession = "";
-	    getNet().deleteCookie("");
 	
 	    loadAllSources();
-	    for( int i = 0; i < m_sources.size(); i++ )
-	    {
-	        SyncSource src = (SyncSource)m_sources.elementAt(i);
-	        getNet().deleteCookie(src.getUrl());
-	    }
-	
 	}
 	
 	public void setSyncServer(String url)throws Exception
