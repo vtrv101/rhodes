@@ -264,8 +264,15 @@ void rho_sync_doSyncSourceByUrl(const char* szSrcUrl)
     if ( !szLastSlash )
         szLastSlash = strrchr(szSrcUrl, '/');
 
-    rho::String strName = szLastSlash ? szLastSlash + 1 : szSrcUrl;
-    
+    const char* szQuest = strrchr(szSrcUrl, '?');
+
+    rho::String strName = "";
+    if (szQuest && szLastSlash)
+        strName = rho::String(szLastSlash+1, szQuest-szLastSlash-1);
+    else
+        strName = szLastSlash ? szLastSlash + 1 : szSrcUrl;
+
+    //TODO: save query params
     CSyncThread::getInstance()->addSyncCommand(new CSyncThread::CSyncCommand(CSyncThread::scSyncOne, strName, (int)0 ) );
 }	
 

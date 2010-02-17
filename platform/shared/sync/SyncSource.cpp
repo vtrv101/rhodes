@@ -338,6 +338,8 @@ void CSyncSource::syncServerChanges()
         }
 
         const char* szData = resp.getCharData();
+        
+        //const char* szData = "[{\"version\":3},{\"token\":\"35639160294387\"},{\"count\":3},{\"progress_count\":0},{\"total_count\":3},{\"metadata\":\"{\\\"foo\\\":\\\"bar\\\"}\",\"insert\":{\"1\":{\"price\":\"199.99\",\"brand\":\"Apple\",\"name\":\"iPhone\"}}}]";
 
         PROF_START("Parse");
         CJSONArrayIterator oJsonArr(szData);
@@ -406,6 +408,7 @@ void CSyncSource::processServerResponse_ver3(CJSONArrayIterator& oJsonArr)
         setTotalCount(oJsonArr.getCurItem().getInt("total_count"));
         oJsonArr.next();
     }
+
    /* if ( !oJsonArr.isEnd() && oJsonArr.getCurItem().hasName("source-error") )
     {
         CJSONEntry oJsonErr = oJsonArr.getCurItem().getEntry("source-error");
@@ -442,7 +445,12 @@ void CSyncSource::processServerResponse_ver3(CJSONArrayIterator& oJsonArr)
             for( ; !iterCmds.isEnd() && getSync().isContinueSync(); iterCmds.next() )
             {
                 String strCmd = iterCmds.getCurKey();
-                if ( strCmd.compare("links") == 0 || strCmd.compare("delete") == 0 || strCmd.compare("insert") == 0)
+
+                if ( strCmd.compare("metadata") == 0 )
+                {
+                    String strMetadata = iterCmds.getCurValue().getString();
+                    getDB().executeSQL("UPDATE sources SET metadata=? WHERE source_id=?", strMetadata, getID() );
+                }else if ( strCmd.compare("links") == 0 || strCmd.compare("delete") == 0 || strCmd.compare("insert") == 0)
                 {
                     CJSONStructIterator objIter(iterCmds.getCurValue());
 

@@ -466,6 +466,9 @@ void CSyncEngine::loadBulkPartition(db::CDBAdapter& dbPartition, const String& s
 	    return;
     }
 
+    if ( !isContinueSync() )
+        return;
+
    	getNotify().fireBulkSyncNotification(false, "download", strPartition, RhoRuby.ERR_NONE);
 
     String fDataName = makeBulkDataFileName(/*"data/bbook/bbook_1264475432.data"*/strDataUrl, dbPartition.getDBPath(), "");//, "_bulk");
@@ -482,6 +485,9 @@ void CSyncEngine::loadBulkPartition(db::CDBAdapter& dbPartition, const String& s
 	        return;
         }
     }
+
+    if ( !isContinueSync() )
+        return;
 
     LOG(INFO) + "Bulk sync: unzip db";
 
