@@ -59,6 +59,21 @@ module Rho
         return @content
       end
 
+      if $".include? "rhodes_translator" and @request['model'] != nil
+        model = Object.const_get(@request['model']).new
+        if model.respond_to? :metadata and model.metadata != nil
+          @back_action = options[:back] if options[:back]
+          action = ''
+          if options[:action]
+            action = options[:action]
+          else
+            action = @request['action'].nil? ? default_action : @request['action']
+          end
+          @content = render_metadata(model.metadata, action)
+          return @content
+        end
+      end
+      
       unless options[:partial].nil?  # render the file and return, don't set rendered true for a partial.
         @content = render_partial(options)
         return @content
@@ -98,6 +113,23 @@ module Rho
       @back_action = options[:back] if options[:back]
       @rendered = true
       @content
+    end
+
+    def render_metadata(metadata,action)
+        data = {}
+        self.instance_variables.each do |sym|
+          data[sym.to_s] = self.instance_variable_get sym
+        end
+
+        t = RhodesTranslator::Translator.new
+        b = RhodesTranslator::Binding.new
+
+      puts "METADATA: #{metadata}"
+      puts "DATA: #{data}"
+        prepared = b.bind(data,metadata)
+
+        t.translate(action,prepared)
+
     end
 
     def render_partial(options = nil)
