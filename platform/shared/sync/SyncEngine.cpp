@@ -415,8 +415,9 @@ void CSyncEngine::doBulkSync(String strClientID, int nBulkSyncState)//throws Exc
     getNotify().fireBulkSyncNotification(true, "", "", RhoRuby.ERR_NONE);        
 }
 
-extern "C"
-int rho_unzip_file(const char* szZipPath);
+//TODO: Fix iPhone link error!
+//extern "C"
+//int rho_unzip_file(const char* szZipPath);
 
 static String getHostFromUrl( const String& strUrl );
 void CSyncEngine::loadBulkPartition(db::CDBAdapter& dbPartition, const String& strPartition, const String& strClientID )
@@ -491,14 +492,15 @@ void CSyncEngine::loadBulkPartition(db::CDBAdapter& dbPartition, const String& s
 
     LOG(INFO) + "Bulk sync: unzip db";
 
-    if ( !rho_unzip_file((fDataName+strZip).c_str()) )
-    {
-        CRhoFile::deleteFile((fDataName+strZip).c_str());
-        LOG(ERROR) + "Bulk sync failed: cannot unzip database file.";
-        stopSync();
-        getNotify().fireBulkSyncNotification(true, "", strPartition, RhoRuby.ERR_UNEXPECTEDSERVERRESPONSE);
-        return;
-    }
+//TODO: Fix iPhone link error!
+//    if ( !rho_unzip_file((fDataName+strZip).c_str()) )
+//    {
+//        CRhoFile::deleteFile((fDataName+strZip).c_str());
+//        LOG(ERROR) + "Bulk sync failed: cannot unzip database file.";
+//        stopSync();
+//        getNotify().fireBulkSyncNotification(true, "", strPartition, RhoRuby.ERR_UNEXPECTEDSERVERRESPONSE);
+//        return;
+//    }
     CRhoFile::deleteFile((fDataName+strZip).c_str());
 
 	LOG(INFO) + "Bulk sync: start change db";
