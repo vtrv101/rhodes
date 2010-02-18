@@ -10,7 +10,7 @@
 #import <Foundation/Foundation.h>
 
 #import "defs.h"
-#import "unzip.h"
+#import "unzip/unzip.h"
 #import "AppManager.h"
 #import "HttpContext.h"
 #import "HttpMessage.h"

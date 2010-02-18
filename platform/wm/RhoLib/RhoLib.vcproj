@@ -914,19 +914,19 @@
 			Name="net"
 			>
 			<File
-				RelativePath="..\..\shared\net\CompatWince.h"
-				>
-			</File>
-			<File
 				RelativePath="..\..\shared\net\CompatWince.cpp"
 				>
 			</File>
 			<File
-				RelativePath="..\..\shared\net\HttpServer.h"
+				RelativePath="..\..\shared\net\CompatWince.h"
 				>
 			</File>
 			<File
 				RelativePath="..\..\shared\net\HttpServer.cpp"
+				>
+			</File>
+			<File
+				RelativePath="..\..\shared\net\HttpServer.h"
 				>
 			</File>
 			<File
@@ -939,6 +939,18 @@
 			</File>
 			<File
 				RelativePath="..\..\shared\net\URI.h"
+				>
+			</File>
+		</Filter>
+		<Filter
+			Name="unzip"
+			>
+			<File
+				RelativePath="..\..\shared\unzip\unzip.cpp"
+				>
+			</File>
+			<File
+				RelativePath="..\..\shared\unzip\unzip.h"
 				>
 			</File>
 		</Filter>

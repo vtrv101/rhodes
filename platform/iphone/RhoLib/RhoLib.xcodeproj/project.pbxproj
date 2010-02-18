@@ -55,6 +55,8 @@
 		5C7BC95110AAB782007B0BA1 /* shttpd.c in Sources */ = {isa = PBXBuildFile; fileRef = 5C7BC93F10AAB782007B0BA1 /* shttpd.c */; };
 		5C7BC95210AAB782007B0BA1 /* shttpd.h in Headers */ = {isa = PBXBuildFile; fileRef = 5C7BC94010AAB782007B0BA1 /* shttpd.h */; };
 		5C7BC95310AAB782007B0BA1 /* string.c in Sources */ = {isa = PBXBuildFile; fileRef = 5C7BC94110AAB782007B0BA1 /* string.c */; };
+		5C7E117A112D145D00BD8DDA /* unzip.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 5C7E1178112D145D00BD8DDA /* unzip.cpp */; };
+		5C7E117B112D145D00BD8DDA /* unzip.h in Headers */ = {isa = PBXBuildFile; fileRef = 5C7E1179112D145D00BD8DDA /* unzip.h */; };
 		5C98174C0FBC4FCE002597A5 /* AutoPointer.h in Headers */ = {isa = PBXBuildFile; fileRef = 5C9817490FBC4FCE002597A5 /* AutoPointer.h */; };
 		5C98174D0FBC4FCE002597A5 /* InputStream.h in Headers */ = {isa = PBXBuildFile; fileRef = 5C98174A0FBC4FCE002597A5 /* InputStream.h */; };
 		5C98174E0FBC4FCE002597A5 /* irhoclassfactory.h in Headers */ = {isa = PBXBuildFile; fileRef = 5C98174B0FBC4FCE002597A5 /* irhoclassfactory.h */; };
@@ -119,6 +121,8 @@
 		5C7BC93F10AAB782007B0BA1 /* shttpd.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = shttpd.c; path = ../../shared/shttpd/src/shttpd.c; sourceTree = SOURCE_ROOT; };
 		5C7BC94010AAB782007B0BA1 /* shttpd.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = shttpd.h; path = ../../shared/shttpd/src/shttpd.h; sourceTree = SOURCE_ROOT; };
 		5C7BC94110AAB782007B0BA1 /* string.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = string.c; path = ../../shared/shttpd/src/string.c; sourceTree = SOURCE_ROOT; };
+		5C7E1178112D145D00BD8DDA /* unzip.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = unzip.cpp; path = ../../shared/unzip/unzip.cpp; sourceTree = SOURCE_ROOT; };
+		5C7E1179112D145D00BD8DDA /* unzip.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = unzip.h; path = ../../shared/unzip/unzip.h; sourceTree = SOURCE_ROOT; };
 		5C9817490FBC4FCE002597A5 /* AutoPointer.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = AutoPointer.h; path = ../../shared/common/AutoPointer.h; sourceTree = SOURCE_ROOT; };
 		5C98174A0FBC4FCE002597A5 /* InputStream.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = InputStream.h; path = ../../shared/common/InputStream.h; sourceTree = SOURCE_ROOT; };
 		5C98174B0FBC4FCE002597A5 /* irhoclassfactory.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = irhoclassfactory.h; path = ../../shared/common/irhoclassfactory.h; sourceTree = SOURCE_ROOT; };
@@ -159,6 +163,7 @@
 		08FB7795FE84155DC02AAC07 /* Source */ = {
 			isa = PBXGroup;
 			children = (
+				5C7E1175112D143B00BD8DDA /* unzip */,
 				5C7BC92F10AAB6CC007B0BA1 /* shttpd */,
 				5CBD46251087397B00107D0D /* net */,
 				5C6B45280F9468C5003CB43A /* statistic */,
@@ -258,6 +263,15 @@
 			name = shttpd;
 			sourceTree = "<group>";
 		};
+		5C7E1175112D143B00BD8DDA /* unzip */ = {
+			isa = PBXGroup;
+			children = (
+				5C7E1178112D145D00BD8DDA /* unzip.cpp */,
+				5C7E1179112D145D00BD8DDA /* unzip.h */,
+			);
+			name = unzip;
+			sourceTree = "<group>";
+		};
 		5CBD46251087397B00107D0D /* net */ = {
 			isa = PBXGroup;
 			children = (
@@ -322,6 +336,7 @@
 				BD2CEFD010ADF10D002356D9 /* INetRequest.h in Headers */,
 				BD2C950910AE0D4B008D4692 /* PosixThreadImpl.h in Headers */,
 				BD4FC54C10BFE4D100D280D0 /* HttpServer.h in Headers */,
+				5C7E117B112D145D00BD8DDA /* unzip.h in Headers */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -392,6 +407,7 @@
 				BD2CEFCE10ADF10D002356D9 /* CURLNetRequest.cpp in Sources */,
 				BD2C950810AE0D4B008D4692 /* PosixThreadImpl.cpp in Sources */,
 				BD4FC54B10BFE4D100D280D0 /* HttpServer.cpp in Sources */,
+				5C7E117A112D145D00BD8DDA /* unzip.cpp in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

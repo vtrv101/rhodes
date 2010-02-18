@@ -3,42 +3,8 @@
 #include "AppManager.h"
 #include "common/RhodesApp.h"
 
-#include "unzip.h"
+#include "unzip/unzip.h"
 #include "ext/rho/rhoruby.h"
-
-extern "C"
-int rho_unzip_file(const char* szZipPath)
-{
-    rho::StringW strZipPathW;
-    rho::common::convertToStringW(szZipPath, strZipPathW);
-    HZIP hz = OpenZipFile(strZipPathW.c_str(), "");
-
-    if ( !hz )
-        return 0;
-
-	// Set base for unziping
-    SetUnzipBaseDir(hz, rho::common::convertToStringW(RHODESAPP().getDBDirPath()).c_str() );
-
-    ZIPENTRY ze;
-    ZRESULT res = 0;
-	// Get info about the zip
-	// -1 gives overall information about the zipfile
-	res = GetZipItem(hz,-1,&ze);
-	int numitems = ze.index;
-
-	// Iterate through items and unzip them
-	for (int zi = 0; zi<numitems; zi++)
-	{ 
-		// fetch individual details, e.g. the item's name.
-		res = GetZipItem(hz,zi,&ze); 
-        if ( res == ZR_OK )
-    		res = UnzipItem(hz, zi, ze.name);         
-	}
-
-	CloseZip(hz);
-
-    return res == ZR_OK ? 1 : 0;
-}
 
 #ifdef ENABLE_DYNAMIC_RHOBUNDLE
 #include "rho/net/NetRequest.h"
