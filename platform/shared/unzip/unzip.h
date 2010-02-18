@@ -7,6 +7,9 @@ extern "C" {
 
 #ifdef __SYMBIAN32__
 #define ZIP_STD
+#elif defined(WIN32) || defined(_WIN32_WCE)
+#else
+#define ZIP_STD
 #endif
 
 //
