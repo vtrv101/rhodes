@@ -840,15 +840,23 @@ int rho_base64_decode(const char *src, int srclen, char *dst)
 
 int rho_unzip_file(const char* szZipPath)
 {
+#ifdef  UNICODE
     rho::StringW strZipPathW;
     rho::common::convertToStringW(szZipPath, strZipPathW);
     HZIP hz = OpenZipFile(strZipPathW.c_str(), "");
-
     if ( !hz )
         return 0;
 
 	// Set base for unziping
     SetUnzipBaseDir(hz, rho::common::convertToStringW(RHODESAPP().getDBDirPath()).c_str() );
+#else
+    HZIP hz = OpenZipFile(szZipPath, "");
+    if ( !hz )
+        return 0;
+
+	// Set base for unziping
+    SetUnzipBaseDir(hz, RHODESAPP().getDBDirPath().c_str() );
+#endif
 
     ZIPENTRY ze;
     ZRESULT res = 0;
