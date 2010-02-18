@@ -5,7 +5,7 @@
 
 #ifdef __SYMBIAN32__
 #define ZIP_STD
-#elif defined(WIN32) || defined(_WIN32_WINCE)
+#elif defined(WIN32) || defined(_WIN32_WCE)
 #else
 #define ZIP_STD
 #endif
@@ -4352,5 +4352,3 @@ bool IsZipHandleU(HZIP hz)
   TUnzipHandleData *han = (TUnzipHandleData*)hz;
   return (han->flag==1);
 }
-
-
