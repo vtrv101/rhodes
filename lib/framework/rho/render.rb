@@ -60,18 +60,23 @@ module Rho
       end
 
       if $".include? "rhodes_translator" and @request['model'] != nil
-        model = Object.const_get(@request['model'])
-        if model.respond_to? :metadata and model.metadata != nil
-          @back_action = options[:back] if options[:back]
-          action = ''
-          if options[:action]
-            action = options[:action]
-          else
-            action = @request['action'].nil? ? default_action : @request['action']
-          end
-          @content = render_metadata(model.metadata, action)
-          return @content
+        model = nil
+        begin
+          model = Object.const_get(@request['model'].to_sym)
+        rescue
         end
+          if model.respond_to? :metadata and model.metadata != nil
+            @back_action = options[:back] if options[:back]
+            action = ''
+            if options[:action]
+              action = options[:action]
+            else
+              action = @request['action'].nil? ? default_action : @request['action']
+            end
+            @content = render_metadata(model.metadata, action)
+            return @content
+          end
+
       end
       
       unless options[:partial].nil?  # render the file and return, don't set rendered true for a partial.
