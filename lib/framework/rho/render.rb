@@ -60,7 +60,7 @@ module Rho
       end
 
       if $".include? "rhodes_translator" and @request['model'] != nil
-        model = Object.const_get(@request['model']).new
+        model = Object.const_get(@request['model'])
         if model.respond_to? :metadata and model.metadata != nil
           @back_action = options[:back] if options[:back]
           action = ''
@@ -124,8 +124,6 @@ module Rho
         t = RhodesTranslator::Translator.new
         b = RhodesTranslator::Binding.new
 
-      puts "METADATA: #{metadata}"
-      puts "DATA: #{data}"
         prepared = b.bind(data,metadata)
 
         t.translate(action,prepared)
