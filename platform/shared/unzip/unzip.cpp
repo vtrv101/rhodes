@@ -5,6 +5,9 @@
 
 #ifdef __SYMBIAN32__
 #define ZIP_STD
+#elif defined(WIN32) || defined(_WIN32_WINCE)
+#else
+#define ZIP_STD
 #endif
 
 #ifdef ZIP_STD
