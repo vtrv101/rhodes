@@ -52,12 +52,7 @@ module Rho
       options = {} if options.nil? or !options.is_a?(Hash)
       options = options.symbolize_keys
 
-      unless options[:string].nil?
-        @content = options[:string]
-        @back_action = options[:back] if options[:back]
-        @rendered = true
-        return @content
-      end
+      metaenabled = false
 
       if $".include? "rhodes_translator" and @request['model'] != nil
         model = nil
@@ -65,42 +60,47 @@ module Rho
           model = Object.const_get(@request['model'].to_sym)
         rescue
         end
-          if model.respond_to? :metadata and model.metadata != nil
-            @back_action = options[:back] if options[:back]
-            action = ''
-            if options[:action]
-              action = options[:action]
-            else
-              action = @request['action'].nil? ? default_action : @request['action']
-            end
-            @content = render_metadata(model.metadata, action)
-            return @content
-          end
-
+        if model.respond_to? :metadata and model.metadata != nil
+          metaenabled = true
+        end
       end
-      
-      unless options[:partial].nil?  # render the file and return, don't set rendered true for a partial.
+
+      if not options[:string].nil?
+        @content = options[:string]
+        @back_action = options[:back] if options[:back]
+        options[:layout] = false if options[:layout].nil?
+
+      elsif metaenabled
+        action = ''
+        if options[:action]
+          action = options[:action]
+        else
+          action = @request['action'].nil? ? default_action : @request['action']
+        end
+        @content = render_metadata(model.metadata, action)
+
+
+      elsif not options[:partial].nil?  # render the file and return, don't set rendered true for a partial.
         @content = render_partial(options)
-        return @content
-      end
-
-      if options[:file].nil? or !options[:file].is_a?(String)
-        if options[:action].nil?
-          called_action = @request['action'].nil? ? default_action : @request['action']
-          if File.exist?(@request[:modelpath]+called_action.to_s+'_erb.iseq')
-            @content = eval_compiled_file(@request[:modelpath]+called_action.to_s+'_erb.iseq', getBinding() )
+        options[:layout] = false
+      else
+        if options[:file].nil? or !options[:file].is_a?(String)
+          if options[:action].nil?
+            called_action = @request['action'].nil? ? default_action : @request['action']
+            if File.exist?(@request[:modelpath]+called_action.to_s+'_erb.iseq')
+              @content = eval_compiled_file(@request[:modelpath]+called_action.to_s+'_erb.iseq', getBinding() )
+            else
+              @content = ""
+            end
           else
-            @content = ""
+            @content = eval_compiled_file(@request[:modelpath]+options[:action].to_s+'_erb.iseq', getBinding() )
           end
         else
-          @content = eval_compiled_file(@request[:modelpath]+options[:action].to_s+'_erb.iseq', getBinding() )
+          options[:file] = options[:file].gsub(/\.erb$/,"").gsub(/^\/app/,"")
+          @content = eval_compiled_file(RhoApplication::get_app_path(@request['application'])+options[:file]+'_erb.iseq', getBinding() )
+          options[:layout] = false if options[:layout].nil?
         end
-      else
-        options[:file] = options[:file].gsub(/\.erb$/,"").gsub(/^\/app/,"")
-        @content = eval_compiled_file(RhoApplication::get_app_path(@request['application'])+options[:file]+'_erb.iseq', getBinding() )
-        options[:layout] = false if options[:layout].nil?
       end
-
       rho_info 'render content: ' + @content.length.to_s
       if xhr? and options[:use_layout_on_ajax] != true
         options[:layout] = false
