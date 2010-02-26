@@ -11,7 +11,7 @@ namespace "rhosync" do
     $url = "#{$url}:#{uri.port}" if uri.port && uri.port != 80
     $host = uri.host
     $port = uri.port
-    $agent = WWW::Mechanize.new
+    $agent = Mechanize.new
     $appname = $app_basedir.gsub(/\\/, '/').split('/').last
     $token_file = File.join(ENV['HOME'],'.rhosync_token')
     $token = File.read($token_file) if File.exist?($token_file)
