@@ -1,14 +1,16 @@
 require 'json'
 require 'mechanize'
 require 'zip/zip'
+require 'uri'
 
 namespace "rhosync" do
   task :config => "config:common" do
-    #$host = 'rhosyncnew.staging.rhohub.com'
-    #$port = '80'
-    $host = 'localhost'
-    $port = '9292'
-    $url = "http://#{$host}:#{$port}"
+    process_rhoconfig(File.join($app_basedir,'rhoconfig.txt'))
+    uri = URI.parse($rhoconfig['syncserver'])
+    $url = "#{uri.scheme}://#{uri.host}"
+    $url = "#{$url}:#{uri.port}" if uri.port && uri.port != 80
+    $host = uri.host
+    $port = uri.port
     $agent = WWW::Mechanize.new
     $appname = $app_basedir.gsub(/\\/, '/').split('/').last
     $token_file = File.join(ENV['HOME'],'.rhosync_token')
@@ -117,5 +119,27 @@ def compress(path)
       zipfile.add(file.sub(path+'/',''),file)
     end
     zipfile.close
+  end
+end
+
+# TODO: Share this code with the framework Rho class
+def process_rhoconfig(file)
+  begin
+    $rhoconfig = {}
+    File.open(file).each do |line|
+      # Skip empty or commented out lines
+      next if line =~ /^\s*(#|$)/
+      parts = line.chomp.split('=')
+      key = parts[0]
+      value = parts[1] if parts[1]
+      if key and value
+        val = value.strip.gsub(/\'|\"/,'')
+        val = val == 'nil' ? nil : val
+        $rhoconfig[key.strip] = val
+      end  
+    end
+  rescue Exception => e
+    puts "Error opening rhoconfig.txt: #{e}, using defaults."
+    puts e.backtrace.join("\n")
   end
 end
