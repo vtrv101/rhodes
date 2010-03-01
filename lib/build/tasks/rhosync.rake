@@ -74,6 +74,14 @@ namespace "rhosync" do
     post("/api/list_apps", :api_token => $token)
   end
   
+  desc "Reset source refresh time"
+  task :reset_refresh_time => :config do
+    user = ask "user: "
+    source_name = ask "source name: "
+    post("/api/set_refresh_time", {:api_token => $token, :app_name => $appname,
+      :user_name => user, :source_name => source_name})
+  end
+  
   desc "Run rhosync source adapter specs"
   task :spec do
     files = File.join($app_basedir,'rhosync/spec/sources/*_spec.rb')
