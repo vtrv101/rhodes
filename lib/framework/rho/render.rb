@@ -129,9 +129,9 @@ module Rho
         t = RhodesTranslator::Translator.new
         b = RhodesTranslator::Binding.new
 
-        prepared = b.bind(data,metadata)
+        prepared = b.bind(data,metadata[action])
 
-        t.translate(action,prepared)
+        t.translate(prepared)
 
     end
 
