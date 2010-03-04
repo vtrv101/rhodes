@@ -121,6 +121,7 @@ module Rho
     end
 
     def render_metadata(metadata,action)
+        action = action.to_s
         data = {}
         self.instance_variables.each do |sym|
           data[sym.to_s] = self.instance_variable_get sym
@@ -128,10 +129,9 @@ module Rho
 
         t = RhodesTranslator::Translator.new
         b = RhodesTranslator::Binding.new
-
         prepared = b.bind(data,metadata[action])
 
-        t.translate(prepared)
+        t.translate(prepared,action)
 
     end
 
