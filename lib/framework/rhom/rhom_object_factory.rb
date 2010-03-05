@@ -84,7 +84,7 @@ module Rhom
                   end
 
                   return nil unless $".include? 'json'
-                  result = ::Rho::RHO.get_src_db(get_source_name).select_from_table('sources', 'metadata', {"source_id"=>get_source_id} )
+                  result = ::Rho::RHO.get_src_db(get_source_name).select_from_table('sources', 'metadata', {"name"=>get_source_name} )
                   if result && result.length > 0 && result[0]['metadata']
                     return JSON.parse(result[0]['metadata'])
                   else
