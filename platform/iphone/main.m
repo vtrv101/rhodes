@@ -5,6 +5,7 @@
 //  Created by adam blum on 9/4/08.
 //  Copyright __MyCompanyName__ 2008. All rights reserved.
 //
+#include <signal.h>
 
 #import <UIKit/UIKit.h>
 #import "ServerHost.h"
@@ -13,6 +14,8 @@
 #define DEFAULT_LOGCATEGORY "main"
 
 int main(int argc, char *argv[]) {
+
+    signal(SIGPIPE, SIG_IGN);
 
 	NSAutoreleasePool * pool = [[NSAutoreleasePool alloc] init];
 
