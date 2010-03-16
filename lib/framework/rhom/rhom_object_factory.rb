@@ -84,7 +84,8 @@ module Rhom
                   end
 
                   return nil unless $".include? 'json'
-                  result = ::Rho::RHO.get_src_db(get_source_name).select_from_table('sources', 'metadata', {"name"=>get_source_name} )
+                  db = ::Rho::RHO.get_src_db(get_source_name)
+                  result = db.select_from_table('sources', 'metadata', {"name"=>get_source_name} )
                   if result && result.length > 0 && result[0]['metadata']
                     return JSON.parse(result[0]['metadata'])
                   else
@@ -94,12 +95,14 @@ module Rhom
                 end
 
                 def count
-                  res = ::Rho::RHO.get_src_db(get_source_name).select_from_table('object_values','object', {"source_id"=>get_source_id}, {"distinct"=>true}).length
+                  db = ::Rho::RHO.get_src_db(get_source_name)
+                  res = db.select_from_table('object_values','object', {"source_id"=>get_source_id}, {"distinct"=>true}).length
                   res
                 end
 
                 def backend_refresh_time
-                  result = ::Rho::RHO.get_src_db(get_source_name).select_from_table('sources', 'backend_refresh_time', {"source_id"=>get_source_id} )
+                  db = ::Rho::RHO.get_src_db(get_source_name)
+                  result = db.select_from_table('sources', 'backend_refresh_time', {"source_id"=>get_source_id} )
                   nTime = 0
                   if result && result.length > 0 && result[0]['backend_refresh_time']
                     nTime = result[0]['backend_refresh_time'].to_i
@@ -194,7 +197,8 @@ module Rhom
                         strLimit = " LIMIT " + limit.to_s + " OFFSET " + offset.to_s if limit && offset && condition_hash.length <= 1 && nulls_cond.length == 0
                     end
                     
-                    ::Rho::RHO.get_src_db(get_source_name).start_transaction
+                    db = ::Rho::RHO.get_src_db(get_source_name)
+                    db.start_transaction
                     begin
                         puts "non-null select start"
                         listObjs = []
@@ -206,7 +210,7 @@ module Rhom
                                 sql << "SELECT object,attrib,value FROM object_values WHERE \n"
                                 sql << makeCondWhere(key,value,srcid_value)
                                 
-                                resObjs = ::Rho::RHO.get_src_db(get_source_name).execute_sql(sql)
+                                resObjs = db.execute_sql(sql)
                                 resObjs.each do |rec|
                                     next if mapObjs[ rec['object'] ] 
                                     
@@ -230,7 +234,7 @@ module Rhom
                                     sql << strLimit if strLimit
                                 end
                                 
-                                listObjs = ::Rho::RHO.get_src_db(get_source_name).execute_sql(sql)
+                                listObjs = db.execute_sql(sql)
                             else
                                 #this is special pagination case. using DISTINCT make it very slow
                                 if strLimit
@@ -245,7 +249,7 @@ module Rhom
                                         sql << "source_id=" + srcid_value + strLimit
                                         
                                         #puts sql
-                                        tempObjs = ::Rho::RHO.get_src_db(get_source_name).execute_sql(sql)
+                                        tempObjs = db.execute_sql(sql)
                                         tempObjs.each do |obj|
                                             if !mapObjs.has_key?(obj['object'])
                                                 mapObjs[ obj['object'] ] = 1
@@ -268,7 +272,7 @@ module Rhom
                                     sql << "SELECT distinct object FROM object_values WHERE \n"
                                     sql << "source_id=" + srcid_value
                                     
-                                    listObjs = ::Rho::RHO.get_src_db(get_source_name).execute_sql(sql)                                    
+                                    listObjs = db.execute_sql(sql)                                    
                                 end    
                             end
                                                 
@@ -290,7 +294,7 @@ module Rhom
                                 sql << " AND attrib=?" # + ::Rhom::RhomDbAdapter.get_value_for_sql_stmt(key)
                                 sql << " AND source_id=?" # + srcid_value
 
-                                attrVal = ::Rho::RHO.get_src_db(get_source_name).execute_sql(sql, 
+                                attrVal = db.execute_sql(sql, 
                                     obj['object'], key, get_source_id)
                                 #puts 'attrVal: ' + attrVal.inspect  if attrVal
                                 if attrVal && attrVal.length>0 && attrVal[0]['value']
@@ -321,7 +325,7 @@ module Rhom
                                 values << get_source_id
                             end
                             
-                            listAttrs = sql.length > 0 ? ::Rho::RHO.get_src_db(get_source_name).execute_sql(sql,values) : []
+                            listAttrs = sql.length > 0 ? db.execute_sql(sql,values) : []
                             
                             new_obj = self.new
                             # always return object field with surrounding '{}'
@@ -348,7 +352,7 @@ module Rhom
                             break if !order_attr && limit && ret_list.length >= limit
                       end
                   ensure
-                    ::Rho::RHO.get_src_db(get_source_name).commit
+                    db.commit
                   end
                   
                   if order_attr
@@ -479,7 +483,9 @@ module Rhom
                     sql << strLimit if strLimit
 
                     puts "Database query start"
-                    list = ::Rho::RHO.get_src_db(get_source_name).execute_sql(sql)
+                    
+                    db = ::Rho::RHO.get_src_db(get_source_name)
+                    list = db.execute_sql(sql)
                     puts "Database query end"
                     
                     if args.first != :count
@@ -584,27 +590,28 @@ module Rhom
                 # deletes all records matching conditions (optionally nil)
                 def delete_all(conditions=nil)
                 
+                  db = ::Rho::RHO.get_src_db(get_source_name)
                   begin
-                      ::Rho::RHO.get_src_db(get_source_name).start_transaction
+                      db.start_transaction
                       if conditions
                         del_conditions = get_conditions_hash(conditions[:conditions])
                       
                         # find all relevant objects, then delete them
-                        del_objects = ::Rho::RHO.get_src_db(get_source_name).select_from_table('object_values', 'object', del_conditions.merge!({"source_id"=>get_source_id}), {"distinct"=>true})
+                        del_objects = db.select_from_table('object_values', 'object', del_conditions.merge!({"source_id"=>get_source_id}), {"distinct"=>true})
                         del_objects.each do |obj|                                                       
-                          ::Rho::RHO.get_src_db(get_source_name).delete_from_table('object_values', {'object'=>obj['object']})
-                          ::Rho::RHO.get_src_db(get_source_name).delete_from_table('changed_values', {'object'=>obj['object']})
+                          db.delete_from_table('object_values', {'object'=>obj['object']})
+                          db.delete_from_table('changed_values', {'object'=>obj['object']})
                         end
                       else
-                        ::Rho::RHO.get_src_db(get_source_name).delete_from_table('object_values', {"source_id"=>get_source_id})
-                        ::Rho::RHO.get_src_db(get_source_name).delete_from_table('changed_values', {"source_id"=>get_source_id})
+                        db.delete_from_table('object_values', {"source_id"=>get_source_id})
+                        db.delete_from_table('changed_values', {"source_id"=>get_source_id})
                         #TODO: add delete all update_type
                       end
-                      ::Rho::RHO.get_src_db(get_source_name).commit
+                      db.commit
  
                   rescue Exception => e
                       puts 'delete_all Exception: ' + e.inspect
-                      ::Rho::RHO.get_src_db(get_source_name).rollback    
+                      db.rollback    
                   end    
                       
                 end
@@ -629,7 +636,8 @@ module Rhom
 	          # app client should check this method before update or delete
 	          # overwise all modifications of unconfirmed created item will be lost
 	          def can_modify
-                result = ::Rho::RHO.get_src_db(get_source_name).execute_sql("SELECT object FROM changed_values WHERE sent>1 LIMIT 1 OFFSET 0")
+	            db = ::Rho::RHO.get_src_db(get_inst_source_name)
+                result = db.execute_sql("SELECT object FROM changed_values WHERE sent>1 LIMIT 1 OFFSET 0")
                 return !(result && result.length > 0) 
 	          end
 	            
@@ -640,36 +648,37 @@ module Rhom
                 update_type='delete'
                 
                 if obj
+                    db = ::Rho::RHO.get_src_db(get_inst_source_name)
                     begin
-                      ::Rho::RHO.get_src_db(get_source_name).start_transaction
+                      db.start_transaction
                 
                       #save list of attrs
-                      attrsList = ::Rho::RHO.get_src_db(get_source_name).select_from_table('object_values', '*', {"object"=>obj}) 
+                      attrsList = db.select_from_table('object_values', '*', {"object"=>obj}) 
                       
                       # first delete the record from viewable list
-                      result = ::Rho::RHO.get_src_db(get_source_name).delete_from_table('object_values', {"object"=>obj})
+                      result = db.delete_from_table('object_values', {"object"=>obj})
                       
-                      resUpdateType = ::Rho::RHO.get_src_db(get_source_name).select_from_table('changed_values', 'update_type', {"object"=>obj, "update_type"=>'create', "sent"=>0}) 
+                      resUpdateType = db.select_from_table('changed_values', 'update_type', {"object"=>obj, "update_type"=>'create', "sent"=>0}) 
                       if resUpdateType && resUpdateType.length > 0 
                         update_type = nil                              
                       end
                       
-                      ::Rho::RHO.get_src_db(get_source_name).delete_from_table('changed_values', {"object"=>obj, "sent"=>0})
+                      db.delete_from_table('changed_values', {"object"=>obj, "sent"=>0})
                       
                       if update_type and attrsList
                         # now add delete operation
                         attrsList.each do |attrName|
-                            ::Rho::RHO.get_src_db(get_source_name).insert_into_table('changed_values', 
+                            db.insert_into_table('changed_values', 
                               {"source_id"=>self.get_inst_source_id, "object"=>obj, 
                                 "attrib"=>attrName['attrib'], "value"=>attrName['value'], "update_type"=>update_type})
                         end    
                       end
                       
-                      ::Rho::RHO.get_src_db(get_source_name).commit
+                      db.commit
  
                     rescue Exception => e
                       puts 'destroy Exception: ' + e.inspect
-                      ::Rho::RHO.get_src_db(get_source_name).rollback    
+                      db.rollback    
                     end    
                       
                 end
@@ -681,11 +690,12 @@ module Rhom
                 # iterate over each instance variable and insert create row to table
 				obj = self.inst_strip_braces(self.object)
 				nSrcID = self.get_inst_source_id
+                db = ::Rho::RHO.get_src_db(get_inst_source_name)
+				
                 begin
-                
-                    ::Rho::RHO.get_src_db(get_source_name).start_transaction
+                    db.start_transaction
                     
-                    result = ::Rho::RHO.get_src_db(get_source_name).execute_sql("SELECT object FROM object_values WHERE object=? AND source_id=? LIMIT 1 OFFSET 0",obj,nSrcID)
+                    result = db.execute_sql("SELECT object FROM object_values WHERE object=? AND source_id=? LIMIT 1 OFFSET 0",obj,nSrcID)
                     bUpdate = result && result.length > 0 
     				update_type = bUpdate ? 'update' : 'create'
                     self.vars.each do |key_a,value|
@@ -702,7 +712,7 @@ module Rhom
                                   "update_type"=>update_type}
                         fields = key == "image_uri" ? fields.merge!({"attrib_type" => "blob.file"}) : fields
 
-                        resValue = ::Rho::RHO.get_src_db(get_source_name).select_from_table('object_values', 'value', {"object"=>obj, "attrib"=>key, "source_id"=>nSrcID}) 
+                        resValue = db.select_from_table('object_values', 'value', {"object"=>obj, "attrib"=>key, "source_id"=>nSrcID}) 
                         if resValue && resValue.length > 0 
                             oldValue = resValue[0]['value']
                             
@@ -716,28 +726,28 @@ module Rhom
                             
                             if isModified
                             
-                                resUpdateType = ::Rho::RHO.get_src_db(get_source_name).select_from_table('changed_values', 'update_type', {"object"=>obj, "attrib"=>key, "source_id"=>nSrcID, 'sent'=>0}) 
+                                resUpdateType = db.select_from_table('changed_values', 'update_type', {"object"=>obj, "attrib"=>key, "source_id"=>nSrcID, 'sent'=>0}) 
                                 if resUpdateType && resUpdateType.length > 0 
                                     fields['update_type'] = resUpdateType[0]['update_type'] 
-                                    ::Rho::RHO.get_src_db(get_source_name).delete_from_table('changed_values', {"object"=>obj, "attrib"=>key, "source_id"=>nSrcID, "sent"=>0})
+                                    db.delete_from_table('changed_values', {"object"=>obj, "attrib"=>key, "source_id"=>nSrcID, "sent"=>0})
                                 end
 
-                                ::Rho::RHO.get_src_db(get_source_name).insert_into_table('changed_values', fields)
-                                result = ::Rho::RHO.get_src_db(get_source_name).update_into_table('object_values', {"value"=>val}, {"object"=>obj, "attrib"=>key, "source_id"=>nSrcID})
+                                db.insert_into_table('changed_values', fields)
+                                result = db.update_into_table('object_values', {"value"=>val}, {"object"=>obj, "attrib"=>key, "source_id"=>nSrcID})
                             end    
                         else
                             tmp_id = generate_id()
-                            ::Rho::RHO.get_src_db(get_source_name).insert_into_table('changed_values', fields)
+                            db.insert_into_table('changed_values', fields)
                             fields.delete("update_type")
-                            result = ::Rho::RHO.get_src_db(get_source_name).insert_into_table('object_values', fields)                                     
+                            result = db.insert_into_table('object_values', fields)                                     
                         end
                         
                     end
-                    ::Rho::RHO.get_src_db(get_source_name).commit
+                    db.commit
 
                 rescue Exception => e
                     puts 'save Exception: ' + e.inspect
-                    ::Rho::RHO.get_src_db(get_source_name).rollback    
+                    db.rollback    
                 end    
                 
                 true
@@ -749,8 +759,9 @@ module Rhom
                 obj = self.inst_strip_braces(self.object)
                 update_type='update'
                 nSrcID = self.get_inst_source_id
+                db = ::Rho::RHO.get_src_db(get_inst_source_name)
                 begin
-                    ::Rho::RHO.get_src_db(get_source_name).start_transaction
+                    db.start_transaction
                     attrs.each do |attrib,val|
                       attrib = attrib.to_s.gsub(/@/,"")
                       next if ::Rhom::RhomObject.method_name_reserved?(attrib)
@@ -772,21 +783,21 @@ module Rhom
                       # then we procede with update
                       if isModified
                           # only one update at a time
-                          resUpdateType = ::Rho::RHO.get_src_db(get_source_name).select_from_table('changed_values', 'update_type', {"object"=>obj, "source_id"=>nSrcID, 'sent'=>0}) 
+                          resUpdateType = db.select_from_table('changed_values', 'update_type', {"object"=>obj, "source_id"=>nSrcID, 'sent'=>0}) 
                           if resUpdateType && resUpdateType.length > 0 
                               update_type = resUpdateType[0]['update_type'] 
-                              ::Rho::RHO.get_src_db(get_source_name).delete_from_table('changed_values', {"object"=>obj, "attrib"=>attrib, "source_id"=>nSrcID, "sent"=>0})
+                              db.delete_from_table('changed_values', {"object"=>obj, "attrib"=>attrib, "source_id"=>nSrcID, "sent"=>0})
                           end
                           
                           # add to syncengine queue
                           
-                          result = ::Rho::RHO.get_src_db(get_source_name).select_from_table('object_values', 'source_id', {"object"=>obj, "attrib"=>attrib, "source_id"=>nSrcID}) 
+                          result = db.select_from_table('object_values', 'source_id', {"object"=>obj, "attrib"=>attrib, "source_id"=>nSrcID}) 
                           if result && result.length > 0 
-                            ::Rho::RHO.get_src_db(get_source_name).update_into_table('object_values', {"value"=>new_val}, {"object"=>obj, "attrib"=>attrib, "source_id"=>nSrcID})
-                            ::Rho::RHO.get_src_db(get_source_name).insert_into_table('changed_values', {"source_id"=>nSrcID, "object"=>obj, "attrib"=>attrib, "value"=>new_val, "update_type"=>update_type})
+                            db.update_into_table('object_values', {"value"=>new_val}, {"object"=>obj, "attrib"=>attrib, "source_id"=>nSrcID})
+                            db.insert_into_table('changed_values', {"source_id"=>nSrcID, "object"=>obj, "attrib"=>attrib, "value"=>new_val, "update_type"=>update_type})
                           else
-                            ::Rho::RHO.get_src_db(get_source_name).insert_into_table('object_values', {"source_id"=>self.get_inst_source_id, "object"=>obj, "attrib"=>attrib, "value"=>new_val})                          
-                            ::Rho::RHO.get_src_db(get_source_name).insert_into_table('changed_values', {"source_id"=>nSrcID, "object"=>obj, "attrib"=>attrib, "value"=>new_val, "update_type"=>update_type})
+                            db.insert_into_table('object_values', {"source_id"=>self.get_inst_source_id, "object"=>obj, "attrib"=>attrib, "value"=>new_val})                          
+                            db.insert_into_table('changed_values', {"source_id"=>nSrcID, "object"=>obj, "attrib"=>attrib, "value"=>new_val, "update_type"=>update_type})
                           end    
                           
                           # update in-memory object
@@ -794,11 +805,11 @@ module Rhom
                       end
                     end
                     
-                    ::Rho::RHO.get_src_db(get_source_name).commit
+                    db.commit
 
                 rescue Exception => e
                     puts 'update_attributes Exception: ' + e.inspect
-                    ::Rho::RHO.get_src_db(get_source_name).rollback    
+                    db.rollback    
                 end    
                     
                 true
