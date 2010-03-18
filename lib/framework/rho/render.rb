@@ -3,6 +3,14 @@ require 'rho/rhocontroller'
 
 module Rho
   class RhoController
+    begin
+      require 'rhodes_translator'
+      include RhodesTranslator::Translator
+      include RhodesTranslator::Binding
+      include RhodesTranslator::Validation
+
+    rescue Exception => e
+    end
 
     def self.layout(name)
       @layout = name
@@ -121,17 +129,16 @@ module Rho
     end
 
     def render_metadata(metadata,action)
+
         action = action.to_s
         data = {}
         self.instance_variables.each do |sym|
           data[sym.to_s] = self.instance_variable_get sym
         end
 
-        t = RhodesTranslator::Translator.new
-        b = RhodesTranslator::Binding.new
-        prepared = b.bind(data,metadata[action])
+        prepared = bind(data,metadata[action])
 
-        t.translate(prepared,action)
+        translate(prepared,action)
 
     end
 
