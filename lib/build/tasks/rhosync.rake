@@ -12,14 +12,15 @@ namespace "rhosync" do
     $host = uri.host
     $port = uri.port
     $agent = Mechanize.new
-    $appname = $app_basedir.gsub(/\\/, '/').split('/').last
+    $appname = $rhoconfig['syncserver'].split('/').last
+    puts "appname: #{$appname}"
     $token_file = File.join(ENV['HOME'],'.rhosync_token')
     $token = File.read($token_file) if File.exist?($token_file)
   end
   
   desc "Flush the rhosync database (you will need to run rhosync:get_api_token afterwards)"
-  task :flushdb => :config do
-    $agent.post("#{$url}/api/flushdb",:api_token => $token)
+  task :reset => :config do
+    $agent.post("#{$url}/api/reset",:api_token => $token)
   end
   
   desc "Fetches current api token from rhosync"
@@ -32,24 +33,8 @@ namespace "rhosync" do
     puts "Token is saved in: #{$token_file}"
   end
   
-  desc "Imports an application into rhosync"
-  task :import_app => :config do
-    name = File.join($app_basedir,'rhosync')
-    compress(name)
-    $agent.post("#{$url}/api/import_app",
-      :app_name => $appname, :api_token => $token,
-      :upload_file =>  File.new(File.join($app_basedir,'rhosync','rhosync.zip'), "rb"))
-    FileUtils.rm archive(name), :force => true
-    print_resp(nil)
-  end
-  
   desc "Clean rhosync, import application and create new user"
   task :clean_start => [:flushdb, :get_api_token, :import_app, :create_user] do
-  end
-  
-  desc "Deletes an application from rhosync"
-  task :delete_app => :config do
-    post("/api/delete_app", :app_name => $appname, :api_token => $token)
   end
   
   desc "Creates and subscribes user for application in rhosync"
@@ -67,11 +52,6 @@ namespace "rhosync" do
     new_password = ask "new password: "
     post("/api/update_user", {:app_name => $appname, :api_token => $token,
       :login => login, :password => password, :attributes => {:new_password => new_password}})
-  end
-  
-  desc "List applications installed in rhosync"
-  task :list_apps => :config do
-    post("/api/list_apps", :api_token => $token)
   end
   
   desc "Reset source refresh time"
