@@ -61,6 +61,7 @@
 		F58E7FDB0F008A6B00E46829 /* phonebook.m in Sources */ = {isa = PBXBuildFile; fileRef = F58E7FDA0F008A6B00E46829 /* phonebook.m */; };
 		F58E80110F008B3F00E46829 /* AddressBook.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = F58E80100F008B3F00E46829 /* AddressBook.framework */; };
 		F5B8FAD40F44EA7B00C9AF85 /* PickImageDelegate.m in Sources */ = {isa = PBXBuildFile; fileRef = F5B8FAD30F44EA7B00C9AF85 /* PickImageDelegate.m */; };
+		F5BD7853115EE3E1007E4E4A /* libFBPlatform.a in Frameworks */ = {isa = PBXBuildFile; fileRef = F5BD783E115EE305007E4E4A /* libFBPlatform.a */; };
 		F5F06668102CB134006CFD39 /* ParamsWrapper.m in Sources */ = {isa = PBXBuildFile; fileRef = F5F06667102CB134006CFD39 /* ParamsWrapper.m */; };
 		F5FD0944106151C200B7B8ED /* MapViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = F5FD0943106151C200B7B8ED /* MapViewController.m */; };
 /* End PBXBuildFile section */
@@ -135,6 +136,20 @@
 			proxyType = 1;
 			remoteGlobalIDString = D2AAC045055464E500DB518D;
 			remoteInfo = rhorubylib;
+		};
+		F5BD783D115EE305007E4E4A /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = F5BD7834115EE305007E4E4A /* FBConnect.xcodeproj */;
+			proxyType = 2;
+			remoteGlobalIDString = BE61A71B0DE2551300D4F7B9;
+			remoteInfo = FBPlatform;
+		};
+		F5BD7851115EE3C0007E4E4A /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = F5BD7834115EE305007E4E4A /* FBConnect.xcodeproj */;
+			proxyType = 1;
+			remoteGlobalIDString = BE61A71A0DE2551300D4F7B9;
+			remoteInfo = FBPlatform;
 		};
 		F5F06495102B946F006CFD39 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
@@ -236,6 +251,7 @@
 		F59F15F90E9449B8004103B4 /* rhorubylib.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; name = rhorubylib.xcodeproj; path = rhorubylib/rhorubylib.xcodeproj; sourceTree = SOURCE_ROOT; };
 		F5B8FAD20F44EA7B00C9AF85 /* PickImageDelegate.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = PickImageDelegate.h; path = Camera/PickImageDelegate.h; sourceTree = "<group>"; };
 		F5B8FAD30F44EA7B00C9AF85 /* PickImageDelegate.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; name = PickImageDelegate.m; path = Camera/PickImageDelegate.m; sourceTree = "<group>"; };
+		F5BD7834115EE305007E4E4A /* FBConnect.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; name = FBConnect.xcodeproj; path = "fbconnect-iphone/src/FBConnect.xcodeproj"; sourceTree = SOURCE_ROOT; };
 		F5F0648C102B946F006CFD39 /* rhoextlib.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; name = rhoextlib.xcodeproj; path = rhoextlib/rhoextlib.xcodeproj; sourceTree = SOURCE_ROOT; };
 		F5F06666102CB134006CFD39 /* ParamsWrapper.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = ParamsWrapper.h; sourceTree = "<group>"; };
 		F5F06667102CB134006CFD39 /* ParamsWrapper.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = ParamsWrapper.m; sourceTree = "<group>"; };
@@ -248,6 +264,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				F5BD7853115EE3E1007E4E4A /* libFBPlatform.a in Frameworks */,
 				BDB15ED610B2EC8E00003DFA /* libtcmalloc.a in Frameworks */,
 				BDB15ED510B2EC8700003DFA /* librhorubylib.a in Frameworks */,
 				BDB15ED410B2EC7500003DFA /* librholib.a in Frameworks */,
@@ -313,6 +330,7 @@
 		29B97314FDCFA39411CA2CEA /* CustomTemplate */ = {
 			isa = PBXGroup;
 			children = (
+				F5BD7834115EE305007E4E4A /* FBConnect.xcodeproj */,
 				BDFBD99910B1B9A900BAAFAB /* Settings.bundle */,
 				BDFBD99510B1B99A00BAAFAB /* Entitlements.plist */,
 				BD2C94A610AE052A008D4692 /* curl.xcodeproj */,
@@ -552,6 +570,14 @@
 			name = Camera;
 			sourceTree = "<group>";
 		};
+		F5BD783A115EE305007E4E4A /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				F5BD783E115EE305007E4E4A /* libFBPlatform.a */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
 		F5F06492102B946F006CFD39 /* Products */ = {
 			isa = PBXGroup;
 			children = (
@@ -584,6 +610,7 @@
 				5C7162C90F8B817F0096B6AA /* PBXTargetDependency */,
 				F5F0652F102B9CA0006CFD39 /* PBXTargetDependency */,
 				BD2C94F310AE0BC3008D4692 /* PBXTargetDependency */,
+				F5BD7852115EE3C0007E4E4A /* PBXTargetDependency */,
 			);
 			name = rhorunner;
 			productName = rhorunner;
@@ -604,6 +631,10 @@
 				{
 					ProductGroup = BD2C94DB10AE0A8C008D4692 /* Products */;
 					ProjectRef = BD2C94A610AE052A008D4692 /* curl.xcodeproj */;
+				},
+				{
+					ProductGroup = F5BD783A115EE305007E4E4A /* Products */;
+					ProjectRef = F5BD7834115EE305007E4E4A /* FBConnect.xcodeproj */;
 				},
 				{
 					ProductGroup = F5F06492102B946F006CFD39 /* Products */;
@@ -667,6 +698,13 @@
 			fileType = archive.ar;
 			path = librhorubylib.a;
 			remoteRef = F59F15FF0E9449B8004103B4 /* PBXContainerItemProxy */;
+			sourceTree = BUILT_PRODUCTS_DIR;
+		};
+		F5BD783E115EE305007E4E4A /* libFBPlatform.a */ = {
+			isa = PBXReferenceProxy;
+			fileType = archive.ar;
+			path = libFBPlatform.a;
+			remoteRef = F5BD783D115EE305007E4E4A /* PBXContainerItemProxy */;
 			sourceTree = BUILT_PRODUCTS_DIR;
 		};
 		F5F06496102B946F006CFD39 /* librhoextlib.a */ = {
@@ -816,6 +854,11 @@
 			isa = PBXTargetDependency;
 			name = rhorubylib;
 			targetProxy = F59F16030E9449E5004103B4 /* PBXContainerItemProxy */;
+		};
+		F5BD7852115EE3C0007E4E4A /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			name = FBPlatform;
+			targetProxy = F5BD7851115EE3C0007E4E4A /* PBXContainerItemProxy */;
 		};
 		F5F0652F102B9CA0006CFD39 /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
@@ -1066,6 +1109,7 @@
 					"-ltcmalloc",
 					"-lrholib",
 					"-lrhoextlib",
+					"-lFBConnect",
 				);
 				"OTHER_LDFLAGS[sdk=iphonesimulator*][arch=*]" = (
 					"-lrhorubylib",
@@ -1073,6 +1117,7 @@
 					"-ltcmalloc",
 					"-lrholib",
 					"-lrhoextlib",
+					"-lFBConnect",
 				);
 				PREBINDING = NO;
 				PROVISIONING_PROFILE = "";

@@ -4,6 +4,8 @@
 #undef DEFAULT_LOGCATEGORY
 #define DEFAULT_LOGCATEGORY "RhoDoSysCall"
 
+extern PARAMS_WRAPPER* fb_do_syscall(PARAMS_WRAPPER* params);
+
 PARAMS_WRAPPER* do_syscall(PARAMS_WRAPPER* params) {
 	int i;
 
@@ -29,6 +31,7 @@ PARAMS_WRAPPER* do_syscall(PARAMS_WRAPPER* params) {
 		}
 		return pw;
 	} else {
+		fb_do_syscall(params);
 		return NULL;
 	}
 }
